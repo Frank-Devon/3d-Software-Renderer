@@ -16,5 +16,5 @@ The program displays two wireframe models in 3d.  The two models can be translat
 - and culling and clipping
 
 **Bugs**
-Moving objects outside the view frustrum can cause visual bugs. Proper culling and clipping will fix that.
-Resizing not properly working.
+- Moving objects outside the view frustrum can cause visual bugs. Proper culling and clipping will fix that.
+- Resizing not properly working.
