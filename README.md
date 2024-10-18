@@ -18,3 +18,7 @@ The program displays two wireframe models in 3d.  The two models can be translat
 **Bugs**
 - Moving objects outside the view frustrum can cause visual bugs. Proper culling and clipping will fix that.
 - Resizing not properly working.
+
+**Build**
+- builds on linux with g++ *.cpp -g -lSDL2 -lSDL2_image -lSDL2_ttf
+- requires SDL2 for windowing
