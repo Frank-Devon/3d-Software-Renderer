@@ -583,6 +583,7 @@ Mat<T> Mat<T>::transpose() const
     return result;
 }
 
+// deletes a row and entry from input matrix and returns new matrix
 template<typename T>
 Mat<T> Mat<T>::sub_matrix(int row, int col) const 
 {
@@ -988,17 +989,38 @@ T dist_from_plane(const Vec<T>& plane, const Vec<T>& point)
 }
 
 template <typename T>
-bool point_in_region3d(const Vec<T>& plane, const Vec<T>& p_region, const Vec<T>& p_test)
+bool point_in_region3d(const Vec<T>& plane, const Vec<T>& _p_region, const Vec<T>& _p_test)
 {
+    auto p_region = _p_region;
+    auto p_test = _p_test;
     assert(plane.length == 4);
+    if (p_region.length == 4) {
+        p_region = p_region.slice(0, 3);
+    }
     assert(p_region.length == 3);
+    if (p_test.length == 4) {
+        p_test = p_test.slice(0, 3);
+    }
     assert(p_test.length == 3);
+    //cout << "p_test.length == " << p_test.length << endl;
+    //cout << "_p_test.length == " << _p_test.length << endl;
     
     T p_region_dist = dist_from_plane(plane, p_region);
     T p_test_dist = dist_from_plane(plane, p_test);
 
     // if same sign (+ + or - -) then two points are in the same region
     return p_region_dist * p_test_dist > 0.0;
+    //// old below
+    //assert(plane.length == 4);
+    //assert(p_region.length == 3);
+    //cout << "p_test.length == " << p_test.length << endl;
+    //assert(p_test.length == 3);
+    //
+    //T p_region_dist = dist_from_plane(plane, p_region);
+    //T p_test_dist = dist_from_plane(plane, p_test);
+
+    //// if same sign (+ + or - -) then two points are in the same region
+    //return p_region_dist * p_test_dist > 0.0;
 }
 
 // returns point where line and plane intersect,
@@ -1030,11 +1052,14 @@ Vec<T> line_plane_intersect(const Vec<T>& line, const Vec<T>& plane)
                   1.0 };
     auto temp = plane.data[0] * result.data[0] + plane.data[1] * result.data[1] + plane.data[2] * result.data[2] 
             + plane.data[3]; 
-    if (temp <= 1.0e-9) {
+    if (temp <= 1.0e-9) { // TODO should negative temps be considered?
         temp = 0.0;
     }
-    cout << "      check answer (should be 0) " << temp  << endl;
-    assert (temp == 0.0);
+    //cout << "      check answer (should be 0) " << temp  << endl;
+    if (temp != 0.0) {
+        cout << "temp " << temp << endl;
+        assert (temp == 0.0);
+    }
     return Vec{t * line.data[0] + line.data[3], t * line.data[1] + line.data[4], t * line.data[2] + line.data[5], 1.0};
 }
 
@@ -1084,7 +1109,7 @@ bool point_on_line_segment3d(const Vec<T>& ptest, const Vec<T>& p0, const Vec<T>
         } else {
             t[i] = (ptest.data[i] - a_point.data[i]) / dir.data[i];
         }
-        cout << "   " <<  t[i] << endl;
+        //cout << "   " <<  t[i] << endl;
     }
 
     //Vec t = (1.0/dir) * (ptest - a_point);
@@ -1093,10 +1118,10 @@ bool point_on_line_segment3d(const Vec<T>& ptest, const Vec<T>& p0, const Vec<T>
             && t[1] >= 0.0 && t[1] <= 1.0 
             && t[2] >= 0.0 && t[2] <= 1.0 ) 
     {
-        cout << "   point IS on line segment\n";
+        //cout << "   point IS on line segment\n";
         return true;
     } else {
-        cout << "   point IS NOT line segment\n";
+        //cout << "   point IS NOT line segment\n";
         return false;
     }
 
@@ -1109,17 +1134,12 @@ bool point_on_line_segment3d(const Vec<T>& ptest, const Vec<T>& p0, const Vec<T>
 template <typename T>
 Vec<T> plane_line_segment_intersect(const Vec<T>& plane, const Vec<T>& p0, const Vec<T>& p1)
 {
+    //cout << "plsi p0 and p1 length " << p0.length << ", " << p1.length << endl; 
     assert(p0.length == 3);
     assert(p1.length == 3);
     assert(plane.length == 4); 
     Vec line = get_line_from_segment3d(p0, p1);
     Vec intersection = line_plane_intersect(line, plane);
-    //cout << ">>plane_line_segment_intersect, ENTRY \n";
-    //cout << "  num_calls: " << num_calls << endl;
-    //cout << "  plane: " << plane << endl;
-    //cout << "  p0: " << p0 << endl;
-    //cout << "  p1: " << p1 << endl;
-    //cout << "  line: " << line << endl;
 
     if (intersection.data[3] == 0.0) {
         // line doesn't even intersect plane, let alone segment
@@ -1132,22 +1152,19 @@ Vec<T> plane_line_segment_intersect(const Vec<T>& plane, const Vec<T>& p0, const
         return intersection;
     } else {
         // point not on segment, (although it is on line)
-        //cout << ">>plane_line_segment_intersect, on line, but not on segment\n";
-        //cout << "  plane: " << plane << endl;
-        //cout << "  p0: " << p0 << endl;
-        //cout << "  p1: " << p1 << endl;
-        //cout << "  line intersection at " << intersection << endl;
         intersection.data[3] = 0.0;
         return intersection;
-        //return Vec{-10001.0, -10001.0, -10001.0, 0.0}; 
     }
 }
 
 // clips polygon inside region
 // 3 dimensional clipping
 template<typename T>
-void clip_polygon3d(const std::vector<Vec<T>>& arg_input_vertices, const std::vector<Vec<T>>& planes,
-        const Vec<T>& pt_inside, std::vector<Vec<T>>& output_vertices)
+void clip_polygon3d(
+        const std::vector<Vec<T>>& arg_input_vertices, 
+        const std::vector<Vec<T>>& planes,
+        const Vec<T>& pt_inside, 
+        std::vector<Vec<T>>& output_vertices)
 {
     using std::vector;
     // check input 
@@ -1214,6 +1231,126 @@ void clip_polygon3d(const std::vector<Vec<T>>& arg_input_vertices, const std::ve
     }
 }
 
+// 3 dimensional clipping
+template<typename T>
+void clip_line3d(
+        const vector<Vec<T>>& _arg_input_vertices, 
+        const vector<Vec<T>>& planes,
+        const Vec<T>& pt_inside, 
+        vector<Vec<T>>& _output_vertices)
+{
+    //cout << "start clip_line3d\n";
 
+    // kludge, convert homogeneous 4d coordinates to 3d
+    vector<Vec<T>> arg_input_vertices{};
+    vector<Vec<T>> output_vertices{};
+    for (const auto& v : _arg_input_vertices) {
+        arg_input_vertices.push_back(v.slice(0, 3));
+    }
+    // checking
+    //for (const auto& v : arg_input_vertices) { 
+    //    cout << "input vertices length " << v.length << endl;
+    //}
+
+    // check input 
+    assert(arg_input_vertices.size() > 0 
+            && arg_input_vertices[0].length == 3); // input_vertices length = 3 
+    assert(planes.size() > 0 && planes[0].length == 4); // plane edges have 4 dimensions
+    assert(pt_inside.length == 3);
+    vector<Vec<T>> input_vertices(2 * arg_input_vertices.size() + 1); // minimize resizes
+    // generally 2 Vec<T>'s per line, although a line could have more... always multiple
+    // of 2 though
+    
+    output_vertices = arg_input_vertices;
+    
+    //// checking
+    //for (const auto& v : output_vertices) { 
+    //    cout << "output_vertices length " << v.length << endl;
+    //}
+    int count_loops = 0;
+    for(auto& edge : planes) {
+        //cout << "count_loops " << count_loops << endl; 
+        count_loops++;
+        input_vertices = output_vertices; 
+        output_vertices.clear();
+        for (int i = 0; i < input_vertices.size(); i = i + 2) {
+            // TODO fix later for lines buffers with more than two points 
+            Vec<T>& current = input_vertices[i + 1]; 
+            Vec<T>& prev = input_vertices[i]; 
+            //cout << "current length " << current.length << endl;
+            //cout << "prev length " << prev.length << endl;
+
+            if (point_in_region3d(edge, pt_inside, current) 
+                    && point_in_region3d(edge, pt_inside, prev)) {
+                output_vertices.push_back(prev);
+                output_vertices.push_back(current);
+            } else if (point_in_region3d(edge, pt_inside, current) 
+                    && !point_in_region3d(edge, pt_inside, prev)) {
+                Vec p = plane_line_segment_intersect(edge, prev, current);
+                output_vertices.push_back(p.slice(0, 3));
+                output_vertices.push_back(current);
+            } else if (!point_in_region3d(edge, pt_inside, current) 
+                    && point_in_region3d(edge, pt_inside, prev)) {
+                output_vertices.push_back(prev);
+                Vec p = plane_line_segment_intersect(edge, prev, current);
+                output_vertices.push_back(p.slice(0, 3));
+            }
+    
+
+        }
+        
+    }
+    // more kludgy stuff. convert 3d coordinates to 4d homogeneous coordinates
+    //auto temp_outputs = output_vertices;
+    //output_vertices.clear();
+    for (auto& temp : output_vertices) {
+        _output_vertices.emplace_back( Vec<double>{
+            temp.data[0], 
+            temp.data[1], 
+            temp.data[2], 
+            1.0} ); 
+    }
+}
+
+// p0 and p1 and 2d points. w is the 2nd element
+// boundary is a line, ax + by + c = 0. elements are a, b, c
+void clip_line_new(
+        const Vec<double>& p0, 
+        const Vec<double>& p1, 
+        const Vec<double>& boundary, 
+        vector<Vec<double>>& output_line_segment)
+{
+    assert(p0.length == 2 && p1.length == 2);
+    assert(boundary.length == 3);
+    
+    // determine boundary
+
+    // check if both points are outside boundary ( in a seperate function?)
+    //if (p0.data[0] == 
+
+}
+    
+
+//// render triangle between 3 points
+//template<typename T>
+//void draw_triangle(const Vec<T>& a, const Vec<T>& b, const Vec<T>& c)
+//{
+//    // using SDL_RenderDrawLine calls to draw a triangle
+//    // call line function from everypoint on the line b to c, back to a
+//    // use integers to count pixels
+//    
+//    //find manhattan distance from b to c
+//    Vec bc = b - c;
+//    Vec bc_unit = bc.unit(); 
+//    Vec cur = c;
+//    for (size_t i = 0; i < bc.data[0] + bc.data[1] < ++i) {
+//        SDL_RenderDrawLine(gsdl.renderer, a.data[0],  a.data[1],
+//                cur.data[0], cur.data[1]);
+//        cur += bc.unit();
+//        //kludge
+//        if (cur.magnitude() > bc.magnitude())
+//        { break;}
+//    }
+//}
 
 #endif
