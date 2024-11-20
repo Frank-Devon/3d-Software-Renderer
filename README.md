@@ -1,6 +1,6 @@
 # 3d Software Renderer
 
-![3D](https://github.com/user-attachments/assets/358386ec-6f33-4b92-9480-ba660e4510ed)
+![3D](https://github.com/user-attachments/assets/7ca62bdf-508a-4989-9629-cf901efa7383)
 
 **Overview**
 The program displays two wireframe models in 3d.  The two models can be translated, rotated, and resized. The camera can also be translated and rotated.
