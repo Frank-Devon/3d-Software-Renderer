@@ -1,5 +1,6 @@
-# 3d-Graphics-Engine
-3d graphics engine from scratch
+# 3d-Software-Renderer
+
+![3D](https://github.com/user-attachments/assets/358386ec-6f33-4b92-9480-ba660e4510ed)
 
 **Overview**
 The program displays two wireframe models in 3d.  The two models can be translated, rotated, and resized. The camera can also be translated and rotated.
