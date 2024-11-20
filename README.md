@@ -1,4 +1,4 @@
-# 3d-Software-Renderer
+# 3d Software Renderer
 
 ![3D](https://github.com/user-attachments/assets/358386ec-6f33-4b92-9480-ba660e4510ed)
 
@@ -12,13 +12,11 @@ The program displays two wireframe models in 3d.  The two models can be translat
 
 **What's next**
 - load model/vertex data from a file.
-- fix resizing causing object to move
 - render sides of object and apply global lighting
 - and culling and clipping
 
 **Bugs**
-- Moving objects outside the view frustrum can cause visual bugs. Proper culling and clipping will fix that.
-- Resizing not properly working.
+- Moving objects outside the view frustrum can cause visual bugs and preformance issues. Proper culling and clipping will fix that.
 
 **Build**
 - builds on linux with g++ *.cpp -g -lSDL2 -lSDL2_image -lSDL2_ttf
