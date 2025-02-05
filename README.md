@@ -19,7 +19,7 @@ The program displays objects in 3D perspective.  The teapot and spaceship can be
 - Painters algorithm used
 
 **What's next**
-- Vec type is very slow. All it's memory is stored on the heap. Static allocation will be used. This should increase speed greatly.
+- Vec type is very slow. All of it's memory is stored on the heap. Static allocation will be used. This should increase speed greatly.
 - Texturing
 - Depth buffer
 - All rasterizing done with draw pixel function of SDL, no more draw line and draw triangle function calls.
@@ -36,7 +36,7 @@ The program displays objects in 3D perspective.  The teapot and spaceship can be
 **Credits and Resources used**
 - The shaceship, teapot and terrain models are taken from Javidx9 aka (
 OneLoneCoder) https://github.com/OneLoneCoder/Javidx9/tree/master/ConsoleGameEngine/BiggerProjects/Engine3D
-His youtube playlist is for graphics is https://www.youtube.com/watch?v=ih20l3pJoeU . I learned a lot from his channel.
+His youtube playlist for graphics is https://www.youtube.com/watch?v=ih20l3pJoeU . I learned a lot from his channel.
 - 3D Math Primer for Graphics and Game Development by Fletcher Dunn and Ian Parbery
 - Cem Yuksel https://www.youtube.com/@cem_yuksel
 - Wolfgang Huerst https://www.youtube.com/@huerst
