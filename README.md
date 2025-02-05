@@ -1,4 +1,4 @@
-# 3d Software Renderer
+# 3D Software Renderer
 
 ![graphics_demo](https://github.com/user-attachments/assets/25486ebc-72e5-484a-a86f-6cbeb0416f93)
 
