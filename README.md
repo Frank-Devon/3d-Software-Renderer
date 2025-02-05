@@ -15,7 +15,7 @@ The program displays objects in 3D perspective.  The teapot and spaceship can be
 **More details**
 - Back face culling enabled (CCW triangles are culled)
 - Clipping on the near plane is done in clip space.
-- Row vector's and left hand cordinates are used.
+- Row vector's and left hand coordinates are used.
 - Painters algorithm used
 
 **What's next**
@@ -25,10 +25,10 @@ The program displays objects in 3D perspective.  The teapot and spaceship can be
 - All rasterizing done with draw pixel function of SDL, no more draw line and draw triangle function calls.
 - Per pixel lighting
 - General refactoring
-- Support more geometric primitives. Also add more informative to vertices, like normal's.
+- More geometric primitives. Add more information to vertices, like normal's.
 - Clip on Left, Right, Top, Bottom, and Far planes. Currently only clipping near plane.
 - Improve rotations, add shear transform to objects. add banking to camera
-- Add multithreading
+- Multi-threading
 
 **Build**
 - builds on linux with g++ *.cpp -g -lSDL2 -lSDL2_image -lSDL2_ttf
