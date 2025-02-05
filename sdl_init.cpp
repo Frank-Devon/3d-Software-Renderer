@@ -58,7 +58,8 @@ SDL_Main::SDL_Main(int screen_width, int screen_height) {
     //g_font = TTF_OpenFont("./fonts/8bitOperatorPlus8-Regular.ttf",32);
     //8bitOperatorPlus8-Regular
     //font = TTF_OpenFont("./fonts/Justmore - Personal Use.ttf",32);
-    font = TTF_OpenFont("./fonts/8bitOperatorPlus8-Regular.ttf", 32);
+    //font = TTF_OpenFont("./fonts/8bitOperatorPlus8-Regular.ttf", 32);
+    font = TTF_OpenFont("./fonts/Cousine-Regular.ttf", 24);
     
     if(font == NULL)
     {

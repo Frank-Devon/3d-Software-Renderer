@@ -6,8 +6,12 @@
 #include <cmath>
 #include <vector>
 #include <initializer_list>
+#include <string>
+#include <strstream>
+#include <fstream>
 
-using std::cout, std::endl, std::array, std::vector, std::initializer_list;
+
+using std::cout, std::endl, std::array, std::vector, std::initializer_list, std::string, std::strstream;
 static long long int num_calls = 0;
 const double PI = 3.141592653589793;
 
@@ -15,7 +19,7 @@ const double PI = 3.141592653589793;
 
 template <typename T>
 struct Vec { 
-    T* data;
+    T* data; // TODO don't use dynamic memory
     unsigned int length;
     Vec();
     Vec(int _length);
@@ -35,7 +39,87 @@ struct Vec {
     Vec unit() const;
     T dot(const Vec& a) const;
     Vec cross(const Vec& a) const;
+    Vec lerp(const Vec& a, T amount);
 };
+
+struct Color {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t a;
+    Color operator*(const Color c) const;
+    Color operator*(const double k) const; 
+};
+
+template <typename T>
+struct Tri {
+    std::array<Vec<T>, 3> verts;
+    Color color;
+    bool draw_wire_frame;
+    bool draw_face;
+    bool draw_back_face;
+    Tri();
+    Tri(const Vec<T>& a, const Vec<T>& b, const Vec<T>& c, Color color,
+            bool draw_wire_frame = true, bool draw_face = true, bool draw_back_face = false);
+    Tri(const vector<Vec<T>>& verts_input, int start_index, Color color, 
+            bool draw_wire_frame = true, bool draw_face = true, bool draw_back_face = false);
+    Tri(std::initializer_list<Vec<T>> verts_input, Color color, 
+            bool draw_wire_frame = true, bool draw_face = true, bool draw_back_face = false);
+};
+
+template <typename T>
+struct Mat {
+    T* data;
+    unsigned int num_rows;
+    unsigned int num_cols;
+
+    Mat();
+    Mat(int _num_rows, int _num_cols);
+    Mat(std::initializer_list<Vec<T>> args);
+    Mat(const Mat& _copy);
+    Mat& operator=(const Mat& a);
+    ~Mat();
+    T get(int row, int col) const;
+    void set(int row, int col, T value);
+    void set_identity();
+    Vec<T> get_row(int row) const;
+    void set_row(int row, const Vec<T>& vec);
+    void zero_row(int row);
+    void add_to_row(int row, const Vec<T>& vec);
+    //Mat slice(int 
+    Mat operator*(const T a) const;
+    Mat operator*(const Mat& a) const;
+    Mat transpose() const;
+    Mat sub_matrix(int _row, int _col) const;
+    T minor(int row, int col) const;
+    T cofactor(int row, int col) const;
+    T det() const;  // determinant
+    Mat adj() const;  // adjoint
+    Mat inv() const;  // inverse
+};
+
+template <typename T>
+struct Model {
+    std::vector<Tri<T>> tris;
+    Mat<T> trans;
+    Mat<T> rot;
+    Mat<T> scale;
+    Color color;  // set all triangles to this color
+    bool draw_wire_frame;
+    bool draw_face;
+    bool draw_back_face;
+    Model();
+    Model(std::initializer_list<Vec<T>> tris, Color color, bool draw_wire_frame = true, bool draw_back_face = false);
+    bool load_from_file(string filename, Color color = {20, 20, 20, 20}, bool draw_wire_frame = true, 
+            bool draw_back_face = false);
+};
+
+template <typename T>
+struct PlaneLineSegmentIntersectResult {
+    bool intersect;
+    Vec<T> point;
+};
+//Vec<T> plane_line_segment_intersect(const Vec<T>& plane, const Vec<T>& p0, const Vec<T>& p1)
 
 //// assume Vec<T> length is 3 or 4, but the number
 //// of Vec<T>'s is always 3
@@ -63,36 +147,6 @@ Vec<T> operator*(const T c, const Vec<T> a);
 template<typename T>
 Vec<T> operator/(const T c, const Vec<T> rhs);
 
-template <typename T>
-struct Mat {
-    T* data;
-    unsigned int num_rows;
-    unsigned int num_cols;
-
-    Mat(int _num_rows, int _num_cols);
-    Mat(std::initializer_list<Vec<T>> args);
-    Mat(const Mat& _copy);
-    Mat& operator=(const Mat& a);
-    ~Mat();
-    T get(int row, int col) const;
-    void set(int row, int col, T value);
-    void set_identity();
-    Vec<T> get_row(int row) const;
-    void set_row(int row, const Vec<T>& vec);
-    void zero_row(int row);
-    void add_to_row(int row, const Vec<T>& vec);
-    //Mat slice(int 
-    Mat operator*(const T a) const;
-    Mat operator*(const Mat& a) const;
-    Mat transpose() const;
-    Mat sub_matrix(int _row, int _col) const;
-    T minor(int row, int col) const;
-    T cofactor(int row, int col) const;
-    T det() const;  // determinant
-    Mat adj() const;  // adjoint
-    Mat inv() const;  // inverse
-};
-
 // vector * matrix
 template<typename T>
 Vec<T> operator*(const Vec<T>& a, const Mat<T>& b);
@@ -119,6 +173,8 @@ Vec<T> get_line_from_segment(const Vec<T>& pt0, const Vec<T>& pt1);
 // with form ax + by + c = 0. element 0 = a, element 1 = b, etc
 template<typename T>
 Vec<T> line_line_intersection(const Vec<T>& a, const Vec<T>& b);
+
+
 
 //
 // definitions
@@ -341,10 +397,39 @@ public:
     }
 };
 
+// cross that accomodated/ignored 4th element
+//template<typename T>
+//Vec<T> Vec<T>::cross(const Vec& a) const
+//{
+//    //assert(length == 3 && length == a.length);
+//    assert( (length == 3 || length == 4) && length == a.length);
+//    Vec<T> i(length), j(length), k(length);
+//    //i.x = 1.0f; j.y = 1.0f; k.z = 1.0f;
+//    i.data[0] = 1.0f; j.data[1] = 1.0f; k.data[2] = 1.0f;
+//    Vec<T> r1(length), r2(length);
+//    //r1 = (y * a.z * i) + (z * a.x * j) + (x * a.y * k);
+//    r1 = (data[1] * a.data[2] * i) 
+//            + (data[2] * a.data[0] * j) 
+//            + (data[0] * a.data[1] * k);
+//    //cout << "r1 " << r1 << endl;
+//    //r2 = -1.0 * (a.y * z * i) - (a.z * x * j) - (a.x * y * k);
+//    r2 = -1.0 * (a.data[1] * data[2] * i) 
+//            - (a.data[2] * data[0] * j) 
+//            - (a.data[0] * data[1] * k);
+//    //cout << "r2 " << r2 << endl;
+//    //r = (y * a.z * i) + (z * a.x * j) + (x * a.y * k)
+//    //        - (a.y * z * i) - (a.z * x * j) - (a.x * y * k);
+//    auto r = r1 + r2;
+//    //if (length == 4) {
+//    //    r[3] = 1.0
+//    return r1 + r2; 
+//}
+
 template<typename T>
 Vec<T> Vec<T>::cross(const Vec& a) const
 {
-    assert(length == 3 && length == a.length);
+    //assert(length == 3 && length == a.length);
+    assert( length == 3 && a.length == 3);
     Vec<T> i(3), j(3), k(3);
     //i.x = 1.0f; j.y = 1.0f; k.z = 1.0f;
     i.data[0] = 1.0f; j.data[1] = 1.0f; k.data[2] = 1.0f;
@@ -364,35 +449,108 @@ Vec<T> Vec<T>::cross(const Vec& a) const
     return r1 + r2; 
 }
 
-// TODO place Triangle and Mesh methods here
 
-//template <typename T>
-//struct Triangle {
-//    std::array<Vec<T>, 3> p;
-//    Triangle();
-//    ~Triangle();
-//    Triangle(const Triangle&);
-//    Triangle& operator=(const Triangle&);
-//};
+template <typename T>    
+Vec<T> Vec<T>::lerp(const Vec& a, T amount)
+{
+    assert(amount <= 1.0);
+    assert(amount >= 0.0);
+    return (1.0 - amount) * (*this) + amount * a; 
+}
 
-//template <typename T>
-//Triangle<T>::Triangle() {
-//    
-//}
+// TODO adjust alpha?
+Color Color::operator*(const Color c) const {
+    return {uint8_t(r * c.r), uint8_t(g * c.g), uint8_t(b * c.b), uint8_t(a) };
+}
 
+// TODO adjust alpha?
+Color Color::operator*(const double k) const {
+    return {uint8_t(r * k), uint8_t(g * k), uint8_t(b * k), uint8_t(a) };
+}
 
+template <typename T>
+Tri<T>::Tri()
+{
+    verts = { Vec<T>(4), Vec<T>(4), Vec<T>(4)};
+    //verts[0] = a;
+    //verts[1] = b;
+    //verts[2] = c;
+    color = {100, 100, 100, 100};;
+    draw_wire_frame = true;
+    draw_face = true;
+    draw_back_face = false;
+}
 
-//template <typename T>
-//struct Mesh {
-//    std::vector<Triangle<T>> tris;
-//    Mesh();
-//    ~Mesh();
-//    Mesh(const Mesh&);
-//    Mesh& operator=(const Mesh&);
-//};
+template <typename T>
+Tri<T>::Tri(
+        const Vec<T>& a, 
+        const Vec<T>& b, 
+        const Vec<T>& c, 
+        Color color_arg,
+        bool draw_wire_frame_arg,
+        bool draw_face_arg,
+        bool draw_back_face_arg)
+{
+    verts[0] = a;
+    verts[1] = b;
+    verts[2] = c;
+    color = color_arg;
+    draw_wire_frame = draw_wire_frame_arg;
+    draw_face = draw_face_arg;
+    draw_back_face = draw_back_face_arg;
+}
 
+template<typename T>
+Tri<T>::Tri(const vector<Vec<T>>& verts_input, 
+        int start_index, 
+        Color color_arg, 
+        bool draw_wire_frame_arg,
+        bool draw_face_arg,
+        bool draw_back_face_arg)
+{
+    verts[0] = verts_input[start_index];
+    verts[1] = verts_input[start_index + 1];
+    verts[2] = verts_input[start_index + 2];
+    color = color_arg;
+    draw_wire_frame = draw_wire_frame_arg;
+    draw_face = draw_face_arg;
+    draw_back_face = draw_back_face_arg;
+}
+
+template <typename T>
+Tri<T>::Tri(std::initializer_list<Vec<T>> verts_input, 
+        Color color_arg, 
+        bool draw_wire_frame_arg,
+        bool draw_face_arg,
+        bool draw_back_face_arg) 
+{
+    // expect 3 vertices 
+    assert(verts_input.size() == 3);    
+    int i = 0;
+    for (const auto& vert : verts_input) {
+        verts[i] = vert;
+        i++;
+    }
+    color = color_arg;
+    draw_wire_frame = draw_wire_frame_arg;
+    draw_face = draw_face_arg;
+    draw_back_face = draw_back_face_arg;
+}
+
+//template<typename T>
+//Tri<T>::Tri(std::initializer_list<
 
 // constructor
+
+template<typename T>
+Mat<T>::Mat() {
+    // just make a 1x1 default matrix
+    num_rows = 1;
+    num_cols = 1;
+    data = new T[1];
+    data[0] = 1.0; // TODO or should be T{} ?
+}
+
 template<typename T>
 Mat<T>::Mat(int _num_rows, int _num_cols) : num_rows(_num_rows), 
         num_cols(_num_cols)
@@ -414,7 +572,7 @@ Mat<T>::Mat(std::initializer_list<Vec<T>> args) {
     //    data[i] = element; 
     //    i++;
     //}
-    cout << "Mat constructor with initializer_list" << endl;
+    //cout << "Mat constructor with initializer_list" << endl;
     assert( args.size() != 0);
     for (auto& vec : args) {
         // get length of the vector
@@ -552,6 +710,11 @@ Mat<T> Mat<T>::operator*(const T b) const
 template<typename T>
 Mat<T> Mat<T>::operator*(const Mat<T>& b) const
 {
+    
+    if(this->num_cols != b.num_rows) {
+        cout << "CRASH! " << this->num_cols << ", " << b.num_rows << '\n';
+    }
+
     assert(this->num_cols == b.num_rows);
     Mat<T> r(num_rows, b.num_cols);
     T sum = 0;
@@ -679,11 +842,122 @@ Mat<T> operator*(const T c, const Mat<T>& a)
     return r;
 }
 
-//template<int N, typename T>
-//T det();
-//
-//template<int N, typename T>
-//Mat inverse();
+//template <typename T>
+//struct Model {
+//    std::vector<Tri<T>> tris;
+//    Mat<T> trans;
+//    Mat<T> rot;
+//    Mat<T> scale;
+//    Model(std::initializer_list<Tri<T> tris);
+//};
+
+template <typename T>
+Model<T>::Model()
+{
+    tris.clear();
+    trans = Mat<T>(4, 4);
+    rot = Mat<T>(4, 4);
+    scale = Mat<T>(4, 4);
+    trans.set_identity();
+    rot.set_identity();
+    scale.set_identity();
+    color = {20, 20, 20, 20};
+    draw_wire_frame = true;
+    draw_face = true;
+    draw_back_face = false;
+}
+
+//Model(std::initializer_list<Vec<T>> tris);
+template <typename T>
+Model<T>::Model(std::initializer_list<Vec<T>> verts, 
+        Color color_arg, 
+        bool draw_wire_frame_arg,
+        bool draw_back_face_arg) 
+{
+    //template <typename T>
+    //struct Model {
+    //    std::vector<Tri<T>> tris;
+    //    Mat<T> trans;
+    //    Mat<T> rot;
+    //    Mat<T> scale;
+    //    Color color;
+    //    Model(std::initializer_list<Vec<T>> tris);
+    //    //Model(std::initializer_list<Tri<T>> tris);
+    //};
+    assert(verts.size() % 3 == 0);
+    trans = Mat<T>(4, 4);
+    rot = Mat<T>(4, 4);
+    scale = Mat<T>(4, 4);
+    trans.set_identity();
+    rot.set_identity();
+    scale.set_identity();
+    color = color_arg;
+    draw_wire_frame = draw_wire_frame_arg;
+    draw_face = true;
+    draw_back_face = draw_back_face_arg;
+    auto it = verts.begin();
+    int i = 0;
+    while (it < verts.end()) {
+        Vec<T> a; Vec<T> b; Vec<T> c;
+        a = *it;
+        b = *(it + 1);
+        c = *(it + 2);
+        //cout << "debugin' stuff: " << a << " " << b << " " << c << '\n';
+        Tri<T> tri{ a, b, c, color, draw_wire_frame, true, draw_back_face}; 
+        //Tri<T> tri{ *it, *(it + 1), *(it + 2), color, draw_wire_frame_arg}; 
+        //tris[i] = tri;
+        tris.push_back(tri);
+        it += 3;
+        i++;
+    }
+}
+
+template <typename T>
+bool Model<T>::load_from_file(string filename, 
+        Color color_arg, 
+        bool draw_wire_frame_arg,
+        bool draw_back_face_arg)
+{
+    std::ifstream f(filename);
+
+    if (!f.is_open()) {
+        return false;
+    }
+
+    tris.clear();
+    vector<Vec<T>> verts;
+    color = color_arg;
+    draw_wire_frame = draw_wire_frame_arg;
+    draw_face = true;
+    draw_back_face = draw_back_face_arg;
+    
+    while (!f.eof()) {
+        char line[200];
+        f.getline(line, 200);
+        strstream s;
+        s << line;
+
+        char junk;
+        if (line[0] == 'v') {
+            Vec<T> v(4);
+            s >> junk >> v.data[0] >> v.data[1] >> v.data[2];
+            v.data[3] = 1.0;
+            verts.push_back(v);
+        } else if (line[0] == 'f') {
+            int i[3];
+            s >> junk >> i[0] >> i[1] >> i[2];
+            i[0] -= 1; // file indexes from 1, instead of 0 (how this program indexes)
+            i[1] -= 1; 
+            i[2] -= 1;
+
+            //  Tri(const Vec<T>& a, const Vec<T>& b, const Vec<T>& c, Color color,
+            //          bool draw_wire_frame = true, bool draw_face = true);
+            tris.push_back( Tri( verts[i[0]], verts[i[1]], verts[i[2]], color_arg, draw_wire_frame_arg, true, draw_back_face));
+        } 
+
+    }
+}
+
 
 //
 // function templates
@@ -759,6 +1033,13 @@ template <typename T> std::ostream& operator<<(std::ostream& os, const Vec<T>& o
     for (int i = 0; i < obj.length; ++i) {
         os << obj.data[i] << " "; 
     }
+    os << ")";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Color& obj) {
+    os << "( ";
+    os << int(obj.r) << ", " << int(obj.g) << ", " << int(obj.b) << ", " << int(obj.a);
     os << ")";
     return os;
 }
@@ -1330,6 +1611,32 @@ void clip_line_new(
 
 }
     
+//template <typename T>
+//PlaneLineSegmentIntersectResult<T> plane_line_segment_intersect(const Vec<T>& plane, const Vec<T>& p0, const Vec<T>& p1)
+//{
+//    //cout << "plsi p0 and p1 length " << p0.length << ", " << p1.length << endl; 
+//    assert(p0.length == 3);
+//    assert(p1.length == 3);
+//    assert(plane.length == 4); 
+//    Vec line = get_line_from_segment3d(p0, p1);
+//    Vec intersection = line_plane_intersect(line, plane);
+//    PlaneLineSegmentIntersectResult<T> result;
+//
+//    if (intersection.data[3] == 0.0) {
+//        // line doesn't even intersect plane, let alone segment
+//        // 0.0 in last element signify no intersection
+//        return Vec{-10000.0, -10000.0, -10000.0, 0.0}; 
+//    }
+//    // does the intersection point lie on the line segment?
+//    // TODO problem with point_on_line_segment3d?
+//    if (point_on_line_segment3d(intersection.slice(0,3), p0, p1)) {
+//        return intersection;
+//    } else {
+//        // point not on segment, (although it is on line)
+//        intersection.data[3] = 0.0;
+//        return intersection;
+//    }
+//}
 
 //// render triangle between 3 points
 //template<typename T>
@@ -1352,5 +1659,36 @@ void clip_line_new(
 //        { break;}
 //    }
 //}
+
+// rotate about y (rotate heading)
+Mat<double> rotate_y(double rad) 
+{
+    // note! returns 4x4 matrix
+    // doesn't rotate by 15 degrees, but by 7.5 degrees
+    Mat<double> m(4, 4);
+    //rad = (PI * 1.5)/360.0;
+    m.set(0, 0, cos(rad));
+    m.set(0, 2, -sin(rad));
+    m.set(1, 1, 1.0);
+    m.set(2, 0, sin(rad));
+    m.set(2, 2, cos(rad));
+    m.set(3, 3, 1.0);
+    return m;
+}
+
+// rotate about x (rotate pitch)
+Mat<double> rotate_x(double rad)
+{
+    // note! returns 4x4 matrix
+    Mat<double> m(4, 4);
+    //rad = (PI * 1.5)/360.0;
+    m.set(0, 0, 1.0);
+    m.set(1, 1, cos(rad));
+    m.set(2, 1, -sin(rad));
+    m.set(1, 2, sin(rad));
+    m.set(2, 2, cos(rad));
+    m.set(3, 3, 1.0);
+    return m;
+}
 
 #endif
