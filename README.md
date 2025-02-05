@@ -7,8 +7,8 @@
 The program displays objects in 3D perspective.  The teapot and spaceship can be translated, rotated, and scaled. The camera can be translated and rotated (yaw and pitch). Basic lighting is implemented (A simple directional lighting model is used). 
 
 **Controls**
-- move camera with: hold middle mouse and move mouse to pan camera, j left, k back, i forward, l right, n down, m up, u turn left, o turn right, ] turn down, [ turn up. Note while translating the camera, you can pan the camera with the middle mouse.
-- move object with: a left, s back, w forward, d right, z down, x up, q turn left, e turn right, r turn down, f turn up, c scale down, v scale up
+- camera: hold middle mouse and move mouse to pan camera, j left, k back, i forward, l right, n down, m up, u turn left, o turn right, ] turn down, [ turn up. Note while translating the camera, you can pan the camera with the middle mouse.
+- objects: a left, s back, w forward, d right, z down, x up, q turn left, e turn right, r turn down, f turn up, c scale down, v scale up
 - There are two models to move, to have the movement controls apply to the first model press 1 (default is 1). To manipulate model 2, press 2.
 - toggle wireframes 8, toggle faces 9, toggle back face culling 0
 
@@ -20,11 +20,12 @@ The program displays objects in 3D perspective.  The teapot and spaceship can be
 
 **What's next**
 - Vec type is very slow. All it's memory is stored on the heap. Static allocation will be used. This should increase speed greatly.
-- texturing
-- depth buffer
+- Texturing
+- Depth buffer
 - All rasterizing done with draw pixel function of SDL, no more draw line and draw triangle function calls.
 - Per pixel lighting
 - General refactoring
+- Support more geometric primitives. Also add more informative to vertices, like normal's.
 - More geometry testing routines
 
 **Build**
