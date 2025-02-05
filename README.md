@@ -28,6 +28,7 @@ The program displays objects in 3D perspective.  The teapot and spaceship can be
 - Support more geometric primitives. Also add more informative to vertices, like normal's.
 - Clip on Left, Right, Top, Bottom, and Far planes. Currently only clipping near plane.
 - Improve rotations, add shear transform to objects. add banking to camera
+- Add multithreading
 
 **Build**
 - builds on linux with g++ *.cpp -g -lSDL2 -lSDL2_image -lSDL2_ttf
