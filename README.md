@@ -35,8 +35,7 @@ The program displays objects in 3D perspective.  The teapot and spaceship can be
 - requires SDL2 for windowing
 
 **Credits and Resources used**
-- The spaceship, teapot and terrain models are taken from Javidx9 aka (
-OneLoneCoder) https://github.com/OneLoneCoder/Javidx9/tree/master/ConsoleGameEngine/BiggerProjects/Engine3D
+- The spaceship, teapot and terrain models are taken from Javidx9 aka OneLoneCoder https://github.com/OneLoneCoder/Javidx9/tree/master/ConsoleGameEngine/BiggerProjects/Engine3D
 His youtube playlist for graphics is https://www.youtube.com/watch?v=ih20l3pJoeU . I learned a lot from his channel.
 - 3D Math Primer for Graphics and Game Development by Fletcher Dunn and Ian Parbery
 - Cem Yuksel https://www.youtube.com/@cem_yuksel
