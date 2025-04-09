@@ -1335,7 +1335,7 @@ int main()
     clip_matrix.set(1, 1,  near );
     clip_matrix.set(2, 2, (near + far)/(far - near));
     clip_matrix.set(2, 3, 1.0 );
-    clip_matrix.set(3, 2, -1.0 * ( near * far)/(far - near) );  // 2.0!!!!!!! TODO
+    clip_matrix.set(3, 2, -2.0 * ( near * far)/(far - near) );  // 2.0!!!!!!! TODO
     ////clip_matrix.set(0, 0,  1.0 );
     ////clip_matrix.set(1, 1,  1.0 );
     ////clip_matrix.set(2, 2, (near + far)/(far - near));
