@@ -3,17 +3,16 @@
 ![torus](https://github.com/user-attachments/assets/58ee3aa8-98a6-41e5-8eae-16e81fa5bf03)
 
 **Overview**
-The program displays textured objects with smooth lighting in 3D perspective.  The torus can be translated, rotated, and scaled. The camera can be translated and rotated (yaw and pitch). 
+The program displays textured objects with smooth diffuse lighting in 3D perspective.  The torus can be translated, rotated, and scaled. The camera can be translated and rotated (yaw and pitch). 
 
 **Controls**
 - camera: hold middle mouse and move mouse to pan camera, j left, k back, i forward, l right, n down, m up, u turn left, o turn right, ] turn down, [ turn up. Note while translating the camera, you can pan the camera with the middle mouse.
 - object: a left, s back, w forward, d right, z down, x up, q turn left, e turn right, r turn down, f turn up, c scale down, v scale up
-- toggle wireframes 8, toggle faces 9, toggle back face culling 0
 
 **More details**
 - Indexed rendering (each vertex transformed only once through the pipeline)
 - Texturing and depth buffer used.
-- Per-pixel diffuse lighting.
+- Per-pixel diffuse lighting accomplished by interpolated normals.
 - Clipping is done in clip space.
 - Row vector's and left hand coordinates are used.
 
