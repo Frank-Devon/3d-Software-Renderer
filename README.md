@@ -30,6 +30,7 @@ The program displays textured objects with smooth diffuse lighting in 3D perspec
 **Credits and Resources used**
 - The spaceship, teapot and terrain models are taken from Javidx9 aka OneLoneCoder https://github.com/OneLoneCoder/Javidx9/tree/master/ConsoleGameEngine/BiggerProjects/Engine3D
 His youtube playlist for graphics is https://www.youtube.com/watch?v=ih20l3pJoeU . I learned a lot from his channel. His interpolation code was used and edited by me. I removed his perspective correct interpolation fix, but added normal interpolation. This code will be improved later.
+- Fundementals of Computer Graphics. Steve Marschner and Peter Shirley.
 - 3D Math Primer for Graphics and Game Development by Fletcher Dunn and Ian Parbery
 - Cem Yuksel https://www.youtube.com/@cem_yuksel
 - Wolfgang Huerst https://www.youtube.com/@huerst
