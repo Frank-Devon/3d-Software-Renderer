@@ -8,13 +8,17 @@
 #include <ios>
 #include <istream>
 #include <algorithm>
+#include <thread>
+#include <utility>
+#include <stdexcept>
 
 #include "vec.hpp"
-#include "test.hpp"
+//#include "test.hpp"
 #include "sdl_init.hpp"
 
 //ctags -R --languages=C++ --extra=+fq --exclude=.git .
-using std::cout, std::endl, std::vector, std::array, std::string;
+using std::cout, std::endl, std::vector, std::array, std::string, std::swap,
+      std::thread, std::pair;
 
 // vertexes of object
 #define NUM_VERTICES 9
@@ -22,158 +26,15 @@ using std::cout, std::endl, std::vector, std::array, std::string;
 #define ROTATE_FIRST 0
 #define RENDER_LINES 0  // renders grid lines
 #define NUM_LINES 22
+#define NUM_THREADS 8
+#define NUM_ATTRB_PER_VERT 12
 bool BACK_FACE_CULLING = true;
+bool Custom_Draw_Line = true;
+bool Custom_Draw_Triangle = true;
 
 Vec<double> model_0_pos;
 Vec<double> model_1_pos;
-
-//array<Model<double>, 3> models = { 
-vector<Model<double>> models = { 
-    Model {
-        {
-            // Front face (2 triangles, 6 vertices)
-            Vec{ 1.0, -1.0, -1.0, 1.0},  // Front bottom right
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{ 1.0,  1.0, -1.0, 1.0},  // Front top right
-            
-            Vec{ 1.0,  1.0, -1.0, 1.0},  // Front top right
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{-1.0,  1.0, -1.0, 1.0},  // Front top left
-            
-            // Back face (2 triangles, 6 vertices)
-            Vec{-1.0, -1.0,  1.0, 1.0},  // Back bottom left
-            Vec{ 1.0, -1.0,  1.0, 1.0},  // Back bottom right
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            
-            Vec{-1.0, -1.0,  1.0, 1.0},  // Back bottom left
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            Vec{-1.0,  1.0,  1.0, 1.0},  // Back top left
-            
-            // Left face (2 triangles, 6 vertices)
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{-1.0, -1.0,  1.0, 1.0},  // Back bottom left
-            Vec{-1.0,  1.0,  1.0, 1.0},  // Back top left
-            
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{-1.0,  1.0,  1.0, 1.0},  // Back top left
-            Vec{-1.0,  1.0, -1.0, 1.0},  // Front top left
-            
-            // Right face (2 triangles, 6 vertices)
-            Vec{ 1.0, -1.0,  1.0, 1.0},  // Back bottom right
-            Vec{ 1.0, -1.0, -1.0, 1.0},  // Front bottom right
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            Vec{ 1.0, -1.0, -1.0, 1.0},  // Front bottom right
-            Vec{ 1.0,  1.0, -1.0, 1.0},  // Front top right
-            
-            // Bottom face (2 triangles, 6 vertices)
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{ 1.0, -1.0, -1.0, 1.0},  // Front bottom right
-            Vec{ 1.0, -1.0,  1.0, 1.0},  // Back bottom right
-            
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{ 1.0, -1.0,  1.0, 1.0},  // Back bottom right
-            Vec{-1.0, -1.0,  1.0, 1.0},  // Back bottom left
-            
-            // Top face (2 triangles, 6 vertices)
-            Vec{ 1.0,  1.0, -1.0, 1.0},  // Front top right
-            Vec{-1.0,  1.0, -1.0, 1.0},  // Front top left
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            Vec{-1.0,  1.0, -1.0, 1.0},  // Front top left
-            Vec{-1.0,  1.0,  1.0, 1.0}   // Back top left
-            
-        },  
-        Color{ 20, 0, 0, 200},
-        true
-    },
-
-    Model {
-        {
-            // Front face (2 triangles, 6 vertices)
-            Vec{ 1.0, -1.0, -1.0, 1.0},  // Front bottom right
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{ 1.0,  1.0, -1.0, 1.0},  // Front top right
-            
-            Vec{ 1.0,  1.0, -1.0, 1.0},  // Front top right
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{-1.0,  1.0, -1.0, 1.0},  // Front top left
-            
-            // Back face (2 triangles, 6 vertices)
-            Vec{-1.0, -1.0,  1.0, 1.0},  // Back bottom left
-            Vec{ 1.0, -1.0,  1.0, 1.0},  // Back bottom right
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            
-            Vec{-1.0, -1.0,  1.0, 1.0},  // Back bottom left
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            Vec{-1.0,  1.0,  1.0, 1.0},  // Back top left
-            
-            // Left face (2 triangles, 6 vertices)
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{-1.0, -1.0,  1.0, 1.0},  // Back bottom left
-            Vec{-1.0,  1.0,  1.0, 1.0},  // Back top left
-            
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{-1.0,  1.0,  1.0, 1.0},  // Back top left
-            Vec{-1.0,  1.0, -1.0, 1.0},  // Front top left
-            
-            // Right face (2 triangles, 6 vertices)
-            Vec{ 1.0, -1.0,  1.0, 1.0},  // Back bottom right
-            Vec{ 1.0, -1.0, -1.0, 1.0},  // Front bottom right
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            Vec{ 1.0, -1.0, -1.0, 1.0},  // Front bottom right
-            Vec{ 1.0,  1.0, -1.0, 1.0},  // Front top right
-            
-            // Bottom face (2 triangles, 6 vertices)
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{ 1.0, -1.0, -1.0, 1.0},  // Front bottom right
-            Vec{ 1.0, -1.0,  1.0, 1.0},  // Back bottom right
-            
-            Vec{-1.0, -1.0, -1.0, 1.0},  // Front bottom left
-            Vec{ 1.0, -1.0,  1.0, 1.0},  // Back bottom right
-            Vec{-1.0, -1.0,  1.0, 1.0},  // Back bottom left
-            
-            // Top face (2 triangles, 6 vertices)
-            Vec{ 1.0,  1.0, -1.0, 1.0},  // Front top right
-            Vec{-1.0,  1.0, -1.0, 1.0},  // Front top left
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            
-            Vec{ 1.0,  1.0,  1.0, 1.0},  // Back top right
-            Vec{-1.0,  1.0, -1.0, 1.0},  // Front top left
-            Vec{-1.0,  1.0,  1.0, 1.0}   // Back top left
-            
-        },  
-        Color{ 0, 20, 0, 200},
-        true
-    },
-
-    Model {
-        {
-            // x axis
-            Vec{0.0, 0.0, -0.1, 1.0 },
-            Vec{2.0, 0.0, 0.0, 1.0 },
-            Vec{0.0, 0.0, 0.1, 1.0 },
-            
-            // y axis
-            Vec{0.0, 0.0, -0.1, 1.0 },
-            Vec{0.0, 2.0, 0.0, 1.0 },
-            Vec{0.0, 0.0, 0.1, 1.0 },
-            
-            // z axis
-            Vec{-0.1, 0.0, 0.0, 1.0 },
-            Vec{0.0, 0.0, 2.0, 1.0 },
-            Vec{0.1, 0.0, 0.0, 1.0 }
-            
-        },  
-        Color{ 200, 200, 200, 200},
-        true,
-        true
-    },
-};
+vector<Model<double>> models;
 
 // vertices drawn to screen
 array<vector<Vec<double>>, NUM_MESHES> model_outputs = // TODO DELETE
@@ -183,6 +44,8 @@ array<vector<Vec<double>>, NUM_MESHES> model_outputs = // TODO DELETE
     vector<Vec<double>>{}
 };
 
+
+// TODO delete these?
 auto models_world = models; // world space of models 
 auto models_culled = models; // world space of models with back face culling applied
 auto models_view = models; // view space of models
@@ -191,19 +54,55 @@ auto models_ndc = models;  // normalized device coordinates of models
 auto models_screen = models;  // screen space
 auto models_out = models;  // perhaps could use a single variable instead of all the above
 
+//
+// new verts variables
+//
+
+// inputs 
+vector<Vec4> pos_in;  // concat'd list of all input positions
+vector<Vec4> norms_in;
+vector<Vec4> norm_faces_in;
+vector<Vec4> colors_in; // per vertex
+vector<Vec3> tex_in;  // 3rd element is 'w'
+vector<unsigned int> indices;
+vector<Material*> materials_in;
+vector<Mat4x4*> model_world_transforms;
+vector<Mat4x4*> model_world_rotations; // per vertex rotations
+vector<Mat4x4*> model_world_rotations_faces; // per face/tri rotation
+Vec3 cam_pos;
+double cam_yaw = 0.0;
+double cam_pitch = 0.0;
+
+vector<Vec4> pos_world;   // per vert
+vector<Vec4> norm_world;  // per vert
+vector<Vec4> norm_faces_world;  // per tri
+vector<Vec4> color_faces_world; // per tri
+vector<bool> tris_culled;
+
+vector<Vec4> pos_pre_clip;
+vector<Vec4> pos_clip; 
+vector<unsigned int> indices_clip;
+vector<bool> tris_clipped;
+
+vector<Vec4> pos_ndc;
+vector<Vec4> pos_screen;
+//
+// end new verts variables
+//
+
 // basic lighting
-Vec<double> light_dir = {-1.0, -1.0, 1.0};
+Vec<double, 3> light_dir = {-1.0, -1.0, 1.0};
+LightDirectional<double> light_directional { 
+        Vec3{-1.0, 0.0, 1.0}, Vec4{1.0, 1.0, 1.0, 1.0}, 1.0};
+//Vec4 light_ambient = {0.1, 0.1, 0.1, 1.0};
+LightAmbient<double> light_ambient { Vec4{1.0, 1.0, 1.0, 1.0}, 0.1};
 
-array<vector<Vec<double>>, NUM_MESHES> model_outputs_clipped;
-
-array<vector<Vec<double>>, NUM_LINES> lines_world;
-array<vector<Vec<double>>, NUM_LINES> lines_outputs; 
-array<vector<Vec<double>>, NUM_LINES> lines_outputs_clipped;
 int lines_outputs_clipped_count = 0;
-Model<double>* model_selected = nullptr; // model selected for transformations
+Mesh<double>* mesh_selected = nullptr; // model selected for transformations
 
-int win_res_x = 1000;
-int win_res_y = 1000;
+const int win_res_x = 1000;
+const int win_res_y = 1000;
+float depth_buffer[win_res_y][win_res_x];
 // meshes
 //Control_Select control_select = Control_Select::model_0;
 enum Control_Select : unsigned int { m_0 = 0, m_1 };
@@ -213,8 +112,6 @@ bool print_info = false;
 std::array<std::array<Vec<double>, NUM_VERTICES>, NUM_MESHES> meshes; 
 
 
-double cam_yaw = 0.0;
-double cam_pitch = 0.0;
 
 // important! determines yaw
 Mat<double> cam_yaw_matrix = {  
@@ -233,12 +130,12 @@ Mat<double> cam_pitch_matrix = {
 };
 
 // should really be called point_at matrix
-Mat<double> world_to_camera = {  
-    Vec{1.0, 0.0, 0.0, 0.0}, 
-    Vec{0.0, 1.0, 0.0, 0.0},
-    Vec{0.0, 0.0, 1.0, 0.0},
-    Vec{0.0, 0.0, 0.0, 1.0}
-};
+//Mat<double> world_to_camera = {  
+//    Vec{1.0, 0.0, 0.0, 0.0}, 
+//    Vec{0.0, 1.0, 0.0, 0.0},
+//    Vec{0.0, 0.0, 1.0, 0.0},
+//    Vec{0.0, 0.0, 0.0, 1.0}
+//};
 
 // still used to hold position
 Mat<double> world_to_camera_translate = {  
@@ -330,12 +227,15 @@ Vec<double> middle_mouse_down_delta = {0, 0};
 // user input variables END
 //
 
-Mat<double> ortho_matrix(4, 4);
-Mat<double> clip_matrix(4, 4); // not used yet, to be used for cliping vertices outside view frustrum.
-Mat<double> turn_left(4, 4);          
-Mat<double> turn_right(4, 4);          
-Mat<double> turn_down(4, 4);          
-Mat<double> turn_up(4, 4);          
+// all 4x4 matrices
+Mat<double> ortho_matrix;
+Mat<double> clip_matrix; // not used yet, to be used for cliping vertices outside view frustrum.
+Mat<double> world_to_camera_matrix;
+Mat<double> world_to_clip_matrix;
+Mat<double> turn_left;
+Mat<double> turn_right;
+Mat<double> turn_down;
+Mat<double> turn_up;
 
 
 // clipped vertices go here
@@ -354,7 +254,6 @@ vector<Vec<double>> clip_planes = {
 // TODO Raster the triangle from by calling draw pixel function
 // render triangle between 3 points
 template<typename T>
-//void draw_triangle(const Vec<T>& a, const Vec<T>& b, const Vec<T>& c)
 void draw_triangle(const Tri<T>& tri) 
 {
     //    typedef struct SDL_Color
@@ -446,57 +345,309 @@ void draw_text(string str, int x, int y) {
     SDL_DestroyTexture(Message);
 }
 
-
-void construct_grid() 
+void draw_line(int x0, int y0, int x1, int y1)
 {
-    // lines_world
-    assert(lines_world.size() == 22);
-    //for(vector<Vec<double>>& points : lines_world) {
-    // construct lines with constant z values (appears horizontal)
-    int i = 0; // index of lines_world
-    for (int j = -5; j < 6; ++j) {
-        double x_start = -5.0;
-        double x_end   = 5.0;
-        lines_world[i].push_back(Vec<double>{ x_start, 0.0, (double)j, 1.0});
-        lines_world[i].push_back(Vec<double>{ x_end, 0.0, (double)j, 1.0});
-        i++;
+    int dx = abs(x1 - x0);
+    int sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0);
+    int sy = y0 < y1 ? 1 : -1;
+    int error = dx + dy;
+    int e2;
+
+    while (true) {
+        //plot(x0, y0);
+        SDL_RenderDrawPoint(gsdl.renderer, x0, y0);
+
+        e2 = 2 * error;
+        if (e2 >= dy) {
+            if (x0 == x1) { break; }
+            error = error + dy;
+            x0 = x0 + sx;
+        }
+        if (e2 <= dx) {
+            if (y0 == y1) { break; }
+            error = error + dx;
+            y0 = y0 + sy;
+        }
     }
-    // construct lines with constant x values
-    for (int j = -5; j < 6; ++j) {
-        double z_start = -5.0;
-        double z_end   = 5.0;
-        lines_world[i].push_back(Vec<double>{ (double)j, 0.0, z_start, 1.0});
-        lines_world[i].push_back(Vec<double>{ (double)j, 0.0, z_end, 1.0});
-        i++;
+}
+
+void draw_triangle(	    int x1, int y1, float u1, float v1, float w1, Vec4 n1,
+						int x2, int y2, float u2, float v2, float w2, Vec4 n2,
+						int x3, int y3, float u3, float v3, float w3, Vec4 n3,
+                        //float light_intensity,
+                        LightDirectional<double>& _light_directional,
+                        LightAmbient<double>& _light_ambient,
+	                    SDL_Surface* _surface = nullptr)
+{
+    // sort y's in ascending order
+	if (y2 < y1) {
+		swap(y1, y2);
+		swap(x1, x2);
+		swap(u1, u2);
+		swap(v1, v2);
+		swap(w1, w2);
+        swap(n1, n2);
+	}
+	if (y3 < y1) {
+		swap(y1, y3);
+		swap(x1, x3);
+		swap(u1, u3);
+		swap(v1, v3);
+		swap(w1, w3);
+        swap(n1, n3);
+	}
+	if (y3 < y2) {
+		swap(y2, y3);
+		swap(x2, x3);
+		swap(u2, u3);
+		swap(v2, v3);
+		swap(w2, w3);
+        swap(n2, n3);
+	}
+
+	int dy1 = y2 - y1;
+	int dx1 = x2 - x1;
+	float dv1 = v2 - v1;
+	float du1 = u2 - u1;
+	float dw1 = w2 - w1;
+    Vec4 dn1 = n2 - n1; // vec
+     
+	int dy2 = y3 - y1;
+	int dx2 = x3 - x1;
+	float dv2 = v3 - v1;
+	float du2 = u3 - u1;
+	float dw2 = w3 - w1;
+    Vec4 dn2 = n3 - n1;
+
+	float tex_u, tex_v, tex_w;
+    Vec4 norm;
+
+	float dax_step = 0, dbx_step = 0,
+		dw1_step = 0, dw2_step = 0,
+		du1_step = 0, dv1_step = 0,
+		du2_step = 0, dv2_step = 0;
+
+    Vec4 dn1_step, dn2_step;
+
+	if (dy1) dax_step = dx1 / (float)abs(dy1);
+	if (dy2) dbx_step = dx2 / (float)abs(dy2);
+
+	if (dy1) du1_step = du1 / (float)abs(dy1);
+	if (dy1) dv1_step = dv1 / (float)abs(dy1);
+	if (dy1) dw1_step = dw1 / (float)abs(dy1);
+
+	if (dy2) du2_step = du2 / (float)abs(dy2);
+	if (dy2) dv2_step = dv2 / (float)abs(dy2);
+	if (dy2) dw2_step = dw2 / (float)abs(dy2);
+
+    if (dy1) dn1_step = dn1 / (float)abs(dy1); 
+    if (dy2) dn2_step = dn2 / (float)abs(dy2); 
+
+	if (dy1)
+	{
+		for (int i = y1; i <= y2; i++)
+		{
+			int ax = x1 + (float)(i - y1) * dax_step;
+			int bx = x1 + (float)(i - y1) * dbx_step;
+
+			float tex_su = u1 + (float)(i - y1) * du1_step;
+			float tex_sv = v1 + (float)(i - y1) * dv1_step;
+			float tex_sw = w1 + (float)(i - y1) * dw1_step;
+
+			float tex_eu = u1 + (float)(i - y1) * du2_step;
+			float tex_ev = v1 + (float)(i - y1) * dv2_step;
+			float tex_ew = w1 + (float)(i - y1) * dw2_step;
+
+            Vec4 norm_s = n1 + (double)(i - y1) * dn1_step;
+            Vec4 norm_e = n1 + (double)(i - y1) * dn2_step;
+
+			if (ax > bx) // ax is to be smaller than bx
+			{
+				swap(ax, bx);
+				swap(tex_sw, tex_ew);
+				swap(tex_su, tex_eu);
+				swap(tex_sv, tex_ev);
+                swap(norm_s, norm_e);
+			}
+
+			tex_u = tex_su;
+			tex_v = tex_sv;
+			tex_w = tex_sw;
+            norm = norm_s;
+
+			float tstep = 1.0f / ((float)(bx - ax));
+			float t = 0.0f;
+
+			for (int j = ax; j < bx; j++)
+			{
+				tex_u = (1.0f - t) * tex_su + t * tex_eu;
+				tex_v = (1.0f - t) * tex_sv + t * tex_ev;
+				tex_w = (1.0f - t) * tex_sw + t * tex_ew;
+                norm  = (1.0 - t) * norm_s + (double)t * norm_e;
+				//if (tex_w > depth_buffer[i*ScreenWidth() + j])
+                // proper clipping would eliminate this check
+                if (i >= 0 && i < win_res_y && j >= 0 && j < win_res_x) {
+				    if (tex_w < depth_buffer[i][j]) // originally <
+				    {
+                        Uint32 pixel = *((Uint32*)_surface->pixels 
+                            + (unsigned int)((tex_v * _surface->h)) * _surface->w 
+                            + (unsigned int)((tex_u * _surface->w)) );
+                        //Uint8 r, g, b, a;
+                        Vec<Uint8, 4> c;//Color<Uint8> c;  // initially stores diffuse, then stores output
+                        SDL_GetRGBA(pixel, _surface->format, &c.r, &c.g, &c.b, &c.a);
+                        
+                        Vec3 norm3d = slice<double, 3, 4>(norm);
+                        norm3d.normalize();
+                        double dp = std::max(0.0, norm3d.dot( -1.0 * _light_directional.dir));
+
+                        c.r = (Uint8)(dp * (double)c.r * _light_directional.color.r);
+                        c.g = (Uint8)(dp * (double)c.g * _light_directional.color.g);
+                        c.b = (Uint8)(dp * (double)c.b * _light_directional.color.b);
+
+                        SDL_SetRenderDrawColor(gsdl.renderer, c.r, c.g, c.b, 255);  //20);
+
+                        SDL_RenderDrawPoint(gsdl.renderer, j, i);
+                        depth_buffer[i][j] = tex_w; 
+                        
+				    }
+                }
+				t += tstep;
+			}
+		}
+	}
+
+	dy1 = y3 - y2;
+	dx1 = x3 - x2;
+	dv1 = v3 - v2;
+	du1 = u3 - u2;
+	dw1 = w3 - w2;
+    dn1 = n3 - n2; 
+
+	if (dy1) dax_step = dx1 / (float)abs(dy1);
+	if (dy2) dbx_step = dx2 / (float)abs(dy2); // redundant?
+
+	du1_step = 0, dv1_step = 0;
+	if (dy1) du1_step = du1 / (float)abs(dy1);
+	if (dy1) dv1_step = dv1 / (float)abs(dy1);
+	if (dy1) dw1_step = dw1 / (float)abs(dy1);
+
+    if (dy1) dn1_step = dn1 / (float)abs(dy1);
+
+	if (dy1)
+	{
+		for (int i = y2; i <= y3; i++)
+		{
+			int ax = x2 + (float)(i - y2) * dax_step;
+			int bx = x1 + (float)(i - y1) * dbx_step;
+
+			float tex_su = u2 + (float)(i - y2) * du1_step;
+			float tex_sv = v2 + (float)(i - y2) * dv1_step;
+			float tex_sw = w2 + (float)(i - y2) * dw1_step;
+
+			float tex_eu = u1 + (float)(i - y1) * du2_step;
+			float tex_ev = v1 + (float)(i - y1) * dv2_step;
+			float tex_ew = w1 + (float)(i - y1) * dw2_step;
+
+            Vec4 norm_s = n2 + (double)(i - y2) * dn1_step; // (n3 - n2) / ( y3 - y2)
+            Vec4 norm_e = n1 + (double)(i - y1) * dn2_step; 
+
+			if (ax > bx)
+			{
+				swap(ax, bx);
+				swap(tex_sw, tex_ew);
+				swap(tex_su, tex_eu);
+				swap(tex_sv, tex_ev);
+                swap(norm_s, norm_e);
+			}
+
+			tex_u = tex_su;
+			tex_v = tex_sv;
+			tex_w = tex_sw;
+            norm = norm_s;
+
+			float tstep = 1.0f / ((float)(bx - ax));
+			float t = 0.0f;
+
+			for (int j = ax; j < bx; j++)
+			{
+				tex_u = (1.0f - t) * tex_su + t * tex_eu;
+				tex_v = (1.0f - t) * tex_sv + t * tex_ev;
+				tex_w = (1.0f - t) * tex_sw + t * tex_ew;
+                norm = (1.0 - t) * norm_s + (double)t * norm_e;
+
+                if (i >=0 && i < win_res_y && j >= 0 && j < win_res_x) {
+				    if (tex_w < depth_buffer[i][j]) // originally <
+				    {
+                        Uint32 pixel = *((Uint32*)_surface->pixels 
+                            + (unsigned int)((tex_v * _surface->h)) * _surface->w 
+                            + (unsigned int)(((tex_u * _surface->w))) );
+
+                        //Uint8 r, g, b, a;
+                        //SDL_GetRGBA(pixel, _surface->format, &r, &g, &b, &a);
+                        //Uint8 r, g, b, a;
+                        Vec<Uint8, 4> c;
+                        SDL_GetRGBA(pixel, _surface->format, &c.r, &c.g, &c.b, &c.a);
+
+                        Vec3 norm3d = slice<double, 3, 4>(norm);
+                        norm3d.normalize();
+                        double dp = norm3d.dot( -1.0 * _light_directional.dir);
+                        dp = std::max(0.0, dp);
+                        dp = 0.0 + dp * 1.0; // ambient term + diffuse term?
+                        //dp = 0.0;
+                        c.r = (Uint8)( dp * (double)c.r * _light_directional.color.r);
+                        c.g = (Uint8)(dp * (double)c.g * _light_directional.color.g);
+                        c.b = (Uint8)(dp * (double)c.b * _light_directional.color.b);
+
+                        SDL_SetRenderDrawColor(gsdl.renderer, c.r, c.g, c.b, 255);
+
+                        SDL_RenderDrawPoint(gsdl.renderer, j, i);
+                        depth_buffer[i][j] = tex_w; // pDepthBuffer[i*ScreenWidth() + j] = tex_w;
+				    }
+                }
+				t += tstep;
+			}
+		}
+	}
+}
+
+void model_world_transform(
+        const vector<Vec<double, 4>>& _verts, 
+        vector<Vec<double, 4>>& _verts_out,
+        //Mat<double, 4, 4>& transform, 
+        const int _start, const int _end) 
+{
+    for (int i = _start; i < _start + _end; ++i) {
+        ////verts[i] = verts[i] * transform; 
+        //_verts_out[i] = _verts[i] * models[verts_i[i]].srt;
     }
 }
 
 template<typename T>
-Mat<T> look_at_matrix(Vec<T>& _pos, Vec<T>& _target, Vec<T>& _up) 
+Mat<T, 4, 4> look_at_matrix(Vec<T, 3>& _pos, Vec<T, 3>& _target, Vec<T, 3>& _up) 
 {
-    assert(_pos.length == 3 && _target.length == 3 && _up.length == 3);
+    //assert(_pos.length == 3 && _target.length == 3 && _up.length == 3);
     // new forward
-    Vec<T> forward = _target - _pos;
-    forward = forward.unit();
+    Vec<T, 3> forward = _target - _pos;
+    forward.normalize(); 
     // new up
-    Vec<T> a = forward.dot(_up) * forward; 
-    Vec<T> up = _up - a;
-    up = up.unit();
+    Vec<T, 3> a = forward.dot(_up) * forward; 
+    Vec<T, 3> up = _up - a;
+    up.normalize(); 
     // new right
-    Vec<T> right = up.cross(forward);
-    right = right.unit();
+    Vec<T, 3> right = up.cross(forward);
+    right.normalize(); 
     // construct 3x3 R matrix
-    Mat<T> R(3, 3);
+    Mat<T, 3, 3> R;
     R.set_row(0, right);
     R.set_row(1, up);
-    R.set_row(2, forward);
-    //R.set(3, 3, 1.0);
+    R.set_row(2, 1.0 * forward);
     R = R.transpose(); // R is now inverted
     
-    Vec<T> t = (- 1.0 * _pos) * R;  // translation portion
+    Vec<T, 3> t = ( -1.0 * _pos) * R;  // translation portion
 
     // construct matrix
-    Mat<T> m(4, 4);
+    Mat<T> m; // 4x4
     m.set(0, 0, R.get(0, 0));
     m.set(0, 1, R.get(0, 1));
     m.set(0, 2, R.get(0, 2));
@@ -540,41 +691,600 @@ void rotate( double yaw, double pitch, Mat<double>& m)
 void test_lerp( ) 
 {
     // test lerp
-    Vec<double> a = { 1.0, 1.0 };
-    Vec<double> b = { 5.0, 3.0 };
+    Vec<double, 2> a = { 1.0, 1.0 };
+    Vec<double, 2> b = { 5.0, 3.0 };
+    //( 1 1 0 0 )
+    //( 3 2 0 0 )
+    //( 5 3 0 0 )
+
+
     cout << "testing lerp\n";
     cout << a.lerp(b, 0.0) << endl << a.lerp(b, 0.5) << endl << a.lerp(b, 1.0) << endl;
 }
 
+void split_range( const int _range, 
+                  const int _splits, 
+                  vector<pair<int, int>> _pairs) 
+{
+    _pairs.clear();
+    //int models_size = 34;
+    //vector<pair<int, int>> i_ranges;
+    int v_per_t = _range / _splits;
+    int v_per_t_remain = _range % _splits;
+    for (int i = 0; i < _splits; ++i) {
+        _pairs.emplace_back(i * v_per_t, (i + 1) * v_per_t);
+    }
+    _pairs[_splits - 1].second += v_per_t_remain;
+   
+    for (int i = 0; i < _splits; ++i) {
+        cout << _pairs[i].first << ", " << _pairs[i].second << '\n';
+    }
+
+}
+
+void clear_vertices( )
+{
+    // input buffers
+    pos_in.clear();
+    norms_in.clear();
+    norm_faces_in.clear();
+    colors_in.clear();
+    tex_in.clear();
+    materials_in.clear();
+    model_world_transforms.clear();
+    model_world_rotations.clear();
+    model_world_rotations_faces.clear();
+    indices.clear();
+    // world 
+    pos_world.clear(); 
+    norm_world.clear(); 
+    norm_faces_world.clear();
+    color_faces_world.clear();
+
+    pos_pre_clip.clear();
+    pos_clip.clear();
+    indices_clip.clear();
+    tris_clipped.clear();
+
+    pos_ndc.clear();
+    pos_screen.clear();
+}
+
+// done usually once per frame (if scene is very dynamic)
+void init_vertices( )
+{
+    clear_vertices(); 
+    //int max_index = 0;
+    for (Model<double>& model : models) {
+        assert(model.meshes.size() == 1);
+        for (Mesh<double>& mesh : model.meshes) {
+            //int v_count = mesh.pos.size();
+            int max_index = pos_in.size();
+            for (Vec4 p : mesh.pos) { 
+                pos_in.emplace_back(p); 
+                model_world_transforms.push_back(&mesh.srt);
+            }
+            for (Vec4 n : mesh.norms) { 
+                norms_in.emplace_back(n); 
+                model_world_rotations.push_back(&mesh.rot);
+            }
+            for (Vec4 nf : mesh.norm_faces) { 
+                norm_faces_in.emplace_back(nf); 
+                model_world_rotations_faces.push_back(&mesh.rot);
+                materials_in.push_back(&mesh.mat);
+            }
+            for (Vec4 c : mesh.colors) { colors_in.emplace_back(c); }
+            for (Vec3 t : mesh.texs) { tex_in.emplace_back(t); }
+            //int n_verts = indices.size() / NUM_ATTRB_PER_VERT; // 12
+            assert( indices.size() % NUM_ATTRB_PER_VERT == 0 );
+            // pos, norm, tex, color
+            mesh.srt = mesh.scale * mesh.rot * mesh.trans;
+            
+            // find max index
+            for ( 
+                unsigned int i = 0; 
+                i < mesh.indices.size();
+                i += NUM_ATTRB_PER_VERT )
+            {
+                // pos vertex indices
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 0]);
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 1]);
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 2]);
+                // norm vertex indices 
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 3]);
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 4]);
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 5]);
+                // tex vertex indices 
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 6]);
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 7]);
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 8]);
+                // color vertex indices
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 9]);
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 10]);
+                indices.push_back( max_index /** 3*/ + mesh.indices[i + 11]);
+            }
+        }
+    }
+    // initialize output buffers
+    pos_world = pos_in; // inefficient!
+    //pos_world.clear();
+    norm_world = norms_in; //inefficient
+    //norm_world.clear();
+    //norm_faces_world[i_tri] = norm_faces_in[i_tri] * 
+    //        *model_world_rotations[i_tri];
+    int num_faces = indices.size() / NUM_ATTRB_PER_VERT;
+    assert( indices.size() % NUM_ATTRB_PER_VERT == 0 );
+    norm_faces_world.resize( num_faces );
+    tris_culled.resize( num_faces );
+    color_faces_world.resize( num_faces);
+    pos_pre_clip.resize( pos_world.size() );
+    pos_clip.resize( pos_world.size() ); //newer
+    indices_clip.reserve( indices.size() * 2 ); // RESERVE!?
+    tris_clipped.resize( num_faces );
+    pos_ndc.resize( pos_world.size() );
+    pos_screen.resize( pos_world.size() );
+    
+    
+}
+
+void model_to_world(int _start_v, int _end_v) 
+{
+    // uniform inputs: pos_in, norms_in, model_world_transforms, color_faces
+    // maybe don't need _b_index
+    for (int i = _start_v; i < _end_v; ++i) {
+        pos_world[i] = pos_in[i] * (*(model_world_transforms[i]));
+        // sizes: 1, 1, 2
+        //norm_world[i] = norms_in[i] * (*(model_world_rotations[i]));
+    }
+    
+
+//    for (int i = 0; i < norms_in.size(); i++) {
+//        norm_world[i] = norms_in[i] * (*(model_world_rotations[i]));
+//    }
+
+}
+
+void model_to_world_normals(int _start_n, int _end_n)
+{
+    for (int i = _start_n; i < _end_n; i++) {
+        norm_world[i] = norms_in[i] * (*(model_world_rotations[i]));
+    }
+}
+
+void model_to_world_part2(int _start_tri, int _end_tri) 
+{
+    //vector<Vec4> norm_faces_in;
+    //vector<Vec4> norm_faces_buffers;
+    for (int i_tri = _start_tri; i_tri < _end_tri; ++i_tri) {
+        // compute world normal
+        norm_faces_world[i_tri] = norm_faces_in[i_tri] * 
+                *  model_world_rotations_faces[i_tri];
+        norm_faces_world[i_tri].normalize();
+        ////// back face culling, set tris_culled[i_tri]
+        ////// cam_pos
+        ////Vec4 p_tri = pos_world[indices[i_tri * 12] + 0]; // point on triangle
+        ////Vec4 p_cam = world_to_camera_translate.get_row(3);
+        ////Vec4 v = p_tri - p_cam;
+        ////v.w = 0;
+        ////v.normalize();
+        ////double dp0 = v.dot(norm_faces_world[i_tri]);
+        ////tris_culled[i_tri] = dp0 < 0.0;
+        // back face culling, set tris_culled[i_tri]
+        // cam_pos
+        Vec3 p_tri = slice<double, 3, 4>(pos_world[indices[i_tri * 12] + 0]); // point on triangle
+        Vec3 v = p_tri - cam_pos;
+        v.normalize();
+        double dp0 = v.dot(slice<double, 3, 4>(norm_faces_world[i_tri]));
+        tris_culled[i_tri] = dp0 >= 0.3; // TODO something wrong  //0.100;
+        
+        // compute lighting
+        //Vec<double, 3> c = -1.0 * a0.cross4d(b0);
+        //c.normalize(); //c = c.unit();
+        Vec3 c = slice<double, 3, 4>(norm_faces_world[i_tri]);
+        c = -1.0 * c;
+        //double dp = c.dot(slice<double, 3, 4>(light_directional.dir));
+        double dp = c.dot(light_directional.dir);
+        dp = std::max(0.0, dp);
+        (color_faces_world[i_tri]).r = dp * light_directional.color.r;
+        (color_faces_world[i_tri]).g = dp * light_directional.color.g;
+        (color_faces_world[i_tri]).b = dp * light_directional.color.b;
+        //(color_faces_world[i_tri]).a = light_directional.b;
+
+        //dp = dp * 255;
+        //int dp_int = int(dp); 
+        //dp_int = std::max( 0, dp_int);
+        //models_world[j].tris[i].color = models[j].color * dp_int ; // set initial color
+
+         
+    }
+}
+
+void world_to_clip(int _start_v, int _end_v) {
+    // _start and _end represent vertices, not faces
+    for (int i = _start_v; i < _end_v; ++i) {
+        pos_clip[i] = pos_world[i] * world_to_clip_matrix;
+        //pos_pre_clip[i] = pos_world[i] * world_to_clip_matrix;
+        ////pos_pre_clip[i] = pos_world[i] * look_at_matrix * clip_matrix;
+    }
+}
+
+//vector<Vec4> pos_pre_clip;
+//vector<Vec4> pos_clip; 
+//vector<unsigned int> indices_clip;
+
+
+void clip(int _start_tri, int _end_tri) 
+{
+    indices_clip = indices; 
+    for (int i = _start_tri * NUM_ATTRB_PER_VERT;
+            i < _end_tri * NUM_ATTRB_PER_VERT;
+            i += NUM_ATTRB_PER_VERT) 
+    {
+
+        //if (tris_culled[i/NUM_ATTRB_PER_VERT]) {
+        //    continue;
+        //}
+
+        //// check for simplest case where all vec's are inside or all outside clipping plane
+        // bottom clip course
+        if (    pos_clip[indices[i + 0]].y < - pos_clip[indices[i + 0]].w
+             && pos_clip[indices[i + 1]].y < - pos_clip[indices[i + 1]].w
+             && pos_clip[indices[i + 2]].y < - pos_clip[indices[i + 2]].w )
+        {
+            tris_clipped[i/NUM_ATTRB_PER_VERT] = 1;  // CLIPPED!
+            continue;
+        }
+        // top clip course 
+        if (    pos_clip[indices[i + 0]].y > pos_clip[indices[i + 0]].w
+             && pos_clip[indices[i + 1]].y > pos_clip[indices[i + 1]].w
+             && pos_clip[indices[i + 2]].y > pos_clip[indices[i + 2]].w )
+        {
+            tris_clipped[i/NUM_ATTRB_PER_VERT] = 1;  // CLIPPED!
+            continue;
+        }
+        // left clip course 
+        if (    pos_clip[indices[i + 0]].x < - pos_clip[indices[i + 0]].w
+             && pos_clip[indices[i + 1]].x < - pos_clip[indices[i + 1]].w
+             && pos_clip[indices[i + 2]].x < - pos_clip[indices[i + 2]].w )
+        {
+            tris_clipped[i/NUM_ATTRB_PER_VERT] = 1;  // CLIPPED!
+            continue;
+        }
+        // right clip course 
+        if (    pos_clip[indices[i + 0]].x > pos_clip[indices[i + 0]].w
+             && pos_clip[indices[i + 1]].x > pos_clip[indices[i + 1]].w
+             && pos_clip[indices[i + 2]].x > pos_clip[indices[i + 2]].w )
+        {
+            tris_clipped[i/NUM_ATTRB_PER_VERT] = 1;  // CLIPPED!
+            continue;
+        }
+        // near clip course 
+        if ( pos_clip[indices[i + 0]].z >= - pos_clip[indices[i + 0]].w &&
+             pos_clip[indices[i + 1]].z >= - pos_clip[indices[i + 1]].w &&
+             pos_clip[indices[i + 2]].z >= - pos_clip[indices[i + 2]].w ) 
+        {
+            tris_clipped[i/NUM_ATTRB_PER_VERT] = 0; // NOT CLIPPED!
+            continue;
+        } 
+        else if ( pos_clip[indices[i + 0]].z < - pos_clip[indices[i + 0]].w &&
+                  pos_clip[indices[i + 1]].z < - pos_clip[indices[i + 1]].w &&
+                  pos_clip[indices[i + 2]].z < - pos_clip[indices[i + 2]].w ) 
+        {
+            tris_clipped[i/NUM_ATTRB_PER_VERT] = 1;  // CLIPPED!
+            continue;
+        } 
+
+        Vec4 pos_prev = pos_clip[indices[i + 2]];
+        bool prev_inside = pos_prev.z >= -pos_prev.w;
+        Vec3 tex_prev = tex_in[indices[i + 8]]; // tex coordinate
+        
+        //int verts_added = 0;
+        vector<Vec4> pos_new{};
+        vector<Vec3> tex_new{}; // new texture coordinates
+        pos_new.reserve(4);
+        tex_new.reserve(4);
+        //pos_new.clear();
+        //texture lerp? and vertex normal lerp needed?
+        for (int j = 0; j < 3; ++j) {
+            Vec4 pos_cur = pos_clip[indices[i + j]];
+            bool cur_inside = pos_cur.z >= -pos_cur.w;
+            Vec3 tex_cur = tex_in[indices[i + j + 6]];
+            if ( (!prev_inside) != (!cur_inside) ) {
+
+                double lerp_factor = (-pos_prev.w - pos_prev.z) 
+                        / ( ( -pos_prev.w - pos_prev.z) 
+                        - ( -pos_cur.w - pos_cur.z) );
+                pos_new.push_back( pos_prev.lerp(pos_cur, lerp_factor));
+                tex_new.push_back( tex_prev.lerp(tex_cur, lerp_factor));
+            }
+            if ( cur_inside ) {
+                pos_new.push_back(pos_cur);
+                tex_new.push_back(tex_cur);
+            }
+            prev_inside = cur_inside;
+            pos_prev = pos_cur;
+            tex_prev = tex_cur;
+        }
+
+        //cout << "DEBUG pos_new.size() = " << pos_new.size() << endl;
+        assert(pos_new.size() == 0 || pos_new.size() == 3 || pos_new.size() == 4);
+        if (pos_new.size() == 0) {
+            tris_clipped[i/NUM_ATTRB_PER_VERT] = 1;  // CLIPPED!
+        } else if ( pos_new.size() == 3) {
+            tris_clipped[i/NUM_ATTRB_PER_VERT] = 1;  // old tri clipped!
+            pos_clip.push_back(pos_new[0]);
+            pos_clip.push_back(pos_new[1]);
+            pos_clip.push_back(pos_new[2]);
+            tex_in.push_back(tex_new[0]);
+            tex_in.push_back(tex_new[1]);
+            tex_in.push_back(tex_new[2]);
+            // *END NEW*
+            color_faces_world.push_back( color_faces_world[i/NUM_ATTRB_PER_VERT] );
+            tris_clipped.push_back(0); // Nnew tri is not clipped!
+            // set new indices
+            //TODO CHECK WASTED MEM
+            // i is index into indices array. 12 elements for each triangle
+            indices_clip.resize( indices_clip.size() + NUM_ATTRB_PER_VERT);  
+            indices_clip[indices_clip.size() - 12 + 0] = pos_clip.size() - 3; //pos
+            indices_clip[indices_clip.size() - 12 + 1] = pos_clip.size() - 2; //pos
+            indices_clip[indices_clip.size() - 12 + 2] = pos_clip.size() - 1; //pos
+            indices_clip[indices_clip.size() - 12 + 6] = tex_in.size() - 3; //tex
+            indices_clip[indices_clip.size() - 12 + 7] = tex_in.size() - 2; //tex
+            indices_clip[indices_clip.size() - 12 + 8] = tex_in.size() - 1; //tex
+            materials_in.push_back(materials_in[i/NUM_ATTRB_PER_VERT]);
+            //indices_clip[indices_clip
+
+        } else if ( pos_new.size() == 4) {
+            tris_clipped[i/NUM_ATTRB_PER_VERT] = 1;  // old tri clipped!
+            pos_clip.push_back(pos_new[0]);
+            pos_clip.push_back(pos_new[1]);
+            pos_clip.push_back(pos_new[2]);
+            pos_clip.push_back(pos_new[3]);
+            tex_in.push_back(tex_new[0]);
+            tex_in.push_back(tex_new[1]);
+            tex_in.push_back(tex_new[2]);
+            tex_in.push_back(tex_new[3]);
+            color_faces_world.push_back( color_faces_world[i/NUM_ATTRB_PER_VERT] );
+            color_faces_world.push_back( color_faces_world[i/NUM_ATTRB_PER_VERT] );
+            tris_clipped.push_back(0); // New tri #1 is not clipped!
+            tris_clipped.push_back(0); // New tri #2 is not clipped!
+            //TODO CHECK WASTED MEM
+            indices_clip.resize( indices_clip.size() + 2 * NUM_ATTRB_PER_VERT);  
+            indices_clip[indices_clip.size() - 24 + 0] = pos_clip.size() - 4; //pos
+            indices_clip[indices_clip.size() - 24 + 1] = pos_clip.size() - 3; //pos
+            indices_clip[indices_clip.size() - 24 + 2] = pos_clip.size() - 2; //pos
+            indices_clip[indices_clip.size() - 24 + 6] = tex_in.size() - 4; //tex
+            indices_clip[indices_clip.size() - 24 + 7] = tex_in.size() - 3; //tex
+            indices_clip[indices_clip.size() - 24 + 8] = tex_in.size() - 2; //tex
+            
+            // 2nd triangle
+            indices_clip[indices_clip.size() - 12 + 0] = pos_clip.size() - 4; //pos
+            indices_clip[indices_clip.size() - 12 + 1] = pos_clip.size() - 2; //pos
+            indices_clip[indices_clip.size() - 12 + 2] = pos_clip.size() - 1; //pos
+            indices_clip[indices_clip.size() - 12 + 6] = tex_in.size() - 4; //tex
+            indices_clip[indices_clip.size() - 12 + 7] = tex_in.size() - 2; //tex
+            indices_clip[indices_clip.size() - 12 + 8] = tex_in.size() - 1; //tex
+            materials_in.push_back(materials_in[i/NUM_ATTRB_PER_VERT]);
+            materials_in.push_back(materials_in[i/NUM_ATTRB_PER_VERT]);
+        } 
+    }
+}
+
+void homogenous_divide(int _start_v, int _end_v) {
+    // _start and _end represent vertices
+    double w = 0.0;
+    for (int i = _start_v; i < _end_v; ++i) {
+        w = pos_clip[i].w;
+        if ( w == 0.0) {
+            continue;
+        }
+        pos_ndc[i] = (1.0 / w) * pos_clip[i] ;
+        pos_ndc[i].w = w;
+        // keep "old" w in original place, for texture coordinate perspective correction
+    }
+}
+
+void map_to_window(int _start_v, int _end_v)
+{
+    //if (!posted_info) { cout << "screen vertices" << endl; }
+    //models_out = models_ndc;
+    for (int i = _start_v; i < _end_v; ++i) {
+        pos_screen[i].x =  1.0 * pos_ndc[i].x * win_res_x 
+                / 2.0  + ((double)win_res_x)/2.0;
+        pos_screen[i].y =  -1.0 * pos_ndc[i].y * win_res_y 
+                / 2.0  + ((double)win_res_y)/2.0;
+        pos_screen[i].z = pos_ndc[i].z;
+        pos_screen[i].w = pos_ndc[i].w; //1.0; // for texturing?
+    }
+}
+
+void raster_triangles(int _start_tri, int _end_tri)
+{
+//    for (int i = 0; i < win_res_y; ++i) {
+//        for (int j = 0; j < win_res_x; ++j) {
+//            depth_buffer[i][j] = 2.0f;
+//        }
+//    }
+    for (int i = _start_tri * NUM_ATTRB_PER_VERT; 
+             i < _end_tri * NUM_ATTRB_PER_VERT; 
+             i += NUM_ATTRB_PER_VERT) 
+    {
+        if (tris_clipped[i/NUM_ATTRB_PER_VERT]) {
+            continue; // don't draw clipped triangles
+        }
+        //if (tris_culled[i/NUM_ATTRB_PER_VERT]) {
+        //    continue;
+        //}
+
+        Vec4 c = color_faces_world[i / 12];
+        assert (c.r <= 1.0);
+        assert (c.g <= 1.0);
+        assert (c.b <= 1.0);
+        c.r = std::max(0.0, c.r);
+        c.g = std::max(0.0, c.g);
+        c.b = std::max(0.0, c.b);
+        //assert (c.r >= 0.0);
+        //assert (c.g >= 0.0);
+        //assert (c.b >= 0.0);
+        SDL_SetRenderDrawColor(gsdl.renderer, 
+                int (c.r * 255), //tri.color.r, 
+                int (c.g * 255), //tri.color.g,
+                int (c.b * 255), //tri.color.b, 
+                255);  //20);
+
+
+
+
+// func signature
+//void draw_triangle(	int x1, int y1, float w1, float u1, float v1, 
+//						int x2, int y2, float w2, float u2, float v2,
+//						int x3, int y3, float w3, float u3, float v3,
+//	                    SDL_Surface* tex = nullptr)
+//
+
+        double w0 = pos_screen[indices_clip[i + 0]].w;
+        double w1 = pos_screen[indices_clip[i + 1]].w;
+        double w2 = pos_screen[indices_clip[i + 2]].w;
+
+        double z0 = pos_screen[indices_clip[i + 0]].z;
+        double z1 = pos_screen[indices_clip[i + 1]].z;
+        double z2 = pos_screen[indices_clip[i + 2]].z;
+        //draw_triangle(
+        auto ab0   =     pos_screen[indices_clip[i + 0]].x; 
+        auto ab1   =     pos_screen[indices_clip[i + 0]].y; 
+        auto ab2   =     tex_in[indices_clip[i + 6]].x ; // TODO indices_clip[i+6] needs init?
+        auto ab3   =     tex_in[indices_clip[i + 6]].y ;
+        auto ab4   =     z0; //w0 
+
+        auto ab5   =     pos_screen[indices_clip[i + 1]].x; 
+        auto ab6   =     pos_screen[indices_clip[i + 1]].y; 
+        auto ab7   =     tex_in[indices_clip[i + 7]].x ; // TODO indices_clip[i+7] needs init?
+        auto ab8   =     tex_in[indices_clip[i + 7]].y ;
+        auto ab9   =     z1;
+
+        auto ab10  =      pos_screen[indices_clip[i + 2]].x; 
+        auto ab11  =      pos_screen[indices_clip[i + 2]].y; 
+        auto ab12  =      tex_in[indices_clip[i + 8]].x ; // TODO indices_clip[i+8] needs init?
+        auto ab13  =      tex_in[indices_clip[i + 8]].y ;
+        auto ab14  =      z2;
+        auto ab15  =      color_faces_world[i/NUM_ATTRB_PER_VERT].r; // ugly
+        auto ab16  =      materials_in[i/12]->texture_diffuse;
+
+        Vec4 norm_mean = (
+                norm_world[indices_clip[i + 3]] +
+                norm_world[indices_clip[i + 4]] +
+                norm_world[indices_clip[i + 5]] ) / 3.0;
+
+
+        draw_triangle(
+                pos_screen[indices_clip[i + 0]].x, 
+                pos_screen[indices_clip[i + 0]].y, 
+                tex_in[indices_clip[i + 6]].x , // TODO indices_clip[i+6] needs init?
+                tex_in[indices_clip[i + 6]].y ,
+                z0, //w0 
+                norm_world[indices_clip[i + 3]], // Vec4
+
+                      
+                pos_screen[indices_clip[i + 1]].x, 
+                pos_screen[indices_clip[i + 1]].y, 
+                tex_in[indices_clip[i + 7]].x , // TODO indices_clip[i+7] needs init?
+                tex_in[indices_clip[i + 7]].y ,
+                z1,
+                norm_world[indices_clip[i + 4]], // Vec4
+               
+                pos_screen[indices_clip[i + 2]].x, 
+                pos_screen[indices_clip[i + 2]].y, 
+                tex_in[indices_clip[i + 8]].x , // TODO indices_clip[i+8] needs init?
+                tex_in[indices_clip[i + 8]].y ,
+                z2,
+                norm_world[indices_clip[i + 5]], // Vec4
+                //color_faces_world[i/NUM_ATTRB_PER_VERT].r, // TODO: ugly light intensity
+                light_directional,
+                light_ambient,
+                materials_in[i/12]->texture_diffuse);
+
+        //draw_triangle(tri.verts[0].x, tri.verts[0].y, tri.verts[0].z,
+        //              tri.verts[1].x, tri.verts[1].y, tri.verts[1].z,
+        //              tri.verts[2].x, tri.verts[2].y, tri.verts[2].z);
+
+    }
+//        for (auto& tri : tris) {
+//            if (tri.draw_face && Custom_Draw_Triangle) {
+//                // uses custom rasterizer
+//
+//                //SDL_Color color = { tri.color.r, tri.color.g, tri.color.b, tri.color.a };
+//                SDL_SetRenderDrawColor(gsdl.renderer, 
+//                    tri.color.r, tri.color.g, tri.color.b ,20);
+//                draw_triangle(tri.verts[0].x, tri.verts[0].y, tri.verts[0].z,
+//                              tri.verts[1].x, tri.verts[1].y, tri.verts[1].z,
+//                              tri.verts[2].x, tri.verts[2].y, tri.verts[2].z);
+//
+//
+//                 
+//            } else if (tri.draw_face && !Custom_Draw_Triangle) {
+//                draw_triangle(tri); // uses SDL rasterizer
+//            }
+//            // ignore for now
+//            //if (!tri.draw_wire_frame) {
+//            //    continue;
+//            //}
+//            // now draw wireframe
+//            // i_tri is index to begining of triangle
+//            if (tri.draw_wire_frame) { 
+//                for (int i = 0; i < 3; ++i) {
+//                    // draws wireframe
+//                    // i at vertex of triangle
+//                    int j = (i + 1 < 3) ? i + 1 : 0;
+//                    SDL_SetRenderDrawColor(gsdl.renderer, 250, 250, 250, 20);
+//                     
+//                    //SDL_RenderDrawLine(gsdl.renderer, 
+//                    //        tri.verts[i].data[0], tri.verts[i].data[1],
+//                    //        tri.verts[j].data[0], tri.verts[j].data[1]);
+//                    if (Custom_Draw_Line) {
+//                        draw_line( tri.verts[i].data[0], tri.verts[i].data[1],
+//                                   tri.verts[j].data[0], tri.verts[j].data[1]);
+//                    } else {
+//                        SDL_RenderDrawLine(gsdl.renderer, 
+//                                tri.verts[i].data[0], tri.verts[i].data[1],
+//                                tri.verts[j].data[0], tri.verts[j].data[1]);
+//                    }
+//                }
+//            }
+//        }
+//
+}
+
 int main() 
 {
-    //test_matrix();
-    light_dir = light_dir.unit(); // normalize light direction
-    models[0].trans.set_row(3, Vec<double>{-9.0, 7.0, 17.0, 1.0});
-    models[1].trans.set_row(3, Vec<double>{-2.0, 11.5, 19.0, 1.0});
-    world_to_camera_translate.set_row(3, Vec<double>{0.0, 17.0, 2.2, 1.0});
+    // quick test
+    cout << "hello world!!!!!!" << endl;
+    test_lerp();
     models.reserve(20);
-    bool load_success = models[0].load_from_file("VideoShip.obj", {0, 0, 1, 1}, false);
-    load_success = models[1].load_from_file("teapot.obj", {0, 0, 1, 1}, false);
-    load_success = models[2].load_from_file("mountains.obj", {0, 0, 1, 1}, false);
-    int index = 0;
-    construct_grid();
-    // initialize lines_outputs
-    for(auto& line : lines_outputs){
-        line.push_back(Vec<double>{});
-        line.push_back(Vec<double>{});
-    }
-    // initialize lines_outputs_clipped
-    for(auto& line : lines_outputs_clipped){
-        line.push_back(Vec<double>{});
-        line.push_back(Vec<double>{});
-    }
-    //index = 0;
-    //for(auto& line : lines_world) {
-    //    lines_outputs_clipped[index] = line; 
-    //    index++;
-    //}
-    //getchar();
+    light_dir.normalize();  // normalize light direction
+    //Model<double> model0{"VideoShip.obj", {0, 0, 1, 1}, false}; 
+    //Model<double> model1{"teapot.obj", {0, 0, 1, 1}, false}; 
+    // flat_export.obj
+    //Model<double> model0{"monkey.obj", {0, 0, 1, 1}, false};  
+    
+    //
+    //
+    //Model<double> model1{"texture_test.obj", {0, 0, 1, 1}, false};  
+    Model<double> model1{"torus_texture.obj", {0, 0, 1, 1}, false};  
+    //Model<double> model1{"uvsphere0.obj", {0, 0, 1, 1}, false};  
+    //Model<double> model1{"icosphere0.obj", {0, 0, 1, 1}, false};  
+
+    //
+    //
+
+
+    //models.emplace_back(model0);
+    models.emplace_back(model1);
+    //models[1].meshes[0].trans.set_row(3, Vec<double>{-0.0, 17.0, 3.5, 1.0});
+    //models[0].meshes[0].trans.set_row(3, Vec<double>{-0.0, 17.0, 6.5, 1.0});
+    models[0].meshes[0].trans.set_row(3, Vec<double>{0.0, 0.0, 0.0, 1.0});
+
+    cam_pos = Vec<double, 3>{0.0, 0.0, -5.0};
+
 
 
     // doesn't rotate by 15 degrees, but by 7.5 degrees
@@ -609,7 +1319,7 @@ int main()
     turn_down.set(3, 3, 1.0);
 
     auto test0 = turn_left * turn_left * turn_left;
-    cout << "test shiet" << endl << test0 << endl;
+    cout << "test turn" << endl << test0 << endl;
     // camera space to clip space
     //double near = 1.00;  // 1.0
 
@@ -617,17 +1327,20 @@ int main()
     //
     //  calculating orthographic and prespective matrices
     //
-    double near = 1.00;  // 1.0
-    double far = 20000.0;//200000.0;  // 20.0
-    double projection_width = 0.6;
-    double projection_height = 0.6;
+    double near = 1.00000;  // 1.0
+    double far = 20000.0;//20000.0;//200000.0;  // 20.0
+    //double projection_width = 0.6;
+    //double projection_height = 0.6;
     clip_matrix.set(0, 0,  near );
     clip_matrix.set(1, 1,  near );
-    //clip_matrix.set(0, 0, near );
-    //clip_matrix.set(1, 1, near );
-    clip_matrix.set(2, 2, (near + far));
+    clip_matrix.set(2, 2, (near + far)/(far - near));
     clip_matrix.set(2, 3, 1.0 );
-    clip_matrix.set(3, 2, -2.0*( near * far) ); 
+    clip_matrix.set(3, 2, -1.0 * ( near * far)/(far - near) );  // 2.0!!!!!!! TODO
+    ////clip_matrix.set(0, 0,  1.0 );
+    ////clip_matrix.set(1, 1,  1.0 );
+    ////clip_matrix.set(2, 2, (near + far)/(far - near));
+    ////clip_matrix.set(2, 3, 1.0 );
+    ////clip_matrix.set(3, 2, -2.0*( near * far)/(far - near) ); 
     //clip_matrix.set(0, 0, near / (projection_width * 2));
     //clip_matrix.set(1, 1, near / (projection_height * 2));
     //clip_matrix.set(2, 2, (near + far)/(far - near));
@@ -636,19 +1349,53 @@ int main()
     cout << "here's the clip matrix" << endl;
     cout << clip_matrix << endl;
     // ortho matrix set up
-    //double r = 1.0, l = -1.0, t = 1.0, b = -1.0;
-    double r = 0.3, l = -0.3, t = 0.3, b = -0.3;
+    //double r = 3.0, l = -3.0, t = 3.0, b = -3.0;
+    double r = 1.0, l = -1.0, t = 1.0, b = -1.0;
     ortho_matrix.set(0, 0, 2.0/(r-l));
     ortho_matrix.set(3, 0, - (r+l)/(r-l));
     ortho_matrix.set(1, 1, 2.0/(t-b));
     ortho_matrix.set(3, 1, - (t+b)/(t-b));
-    //ortho_matrix.set(2, 2, 2.0/(near-far));
-    //ortho_matrix.set(3, 2, - (near+far)/(near-far));
-    ortho_matrix.set(2, 2, - 2.0/(near-far));
+    ortho_matrix.set(2, 2, -2.0/(far-near));
     ortho_matrix.set(3, 2, - (near+far)/(near-far));
     ortho_matrix.set(3, 3, 1.0);
-    //ortho_matrix.set_identity();
 
+    //
+    //  CLIP MATRIX TEST
+    //
+    cout << "clip matrix test\n";
+    cout << "clip matrix test\n";
+    cout << "clip matrix test\n";
+    Vec<double, 4> v0 = { 0.0, 0.0, 1.0, 1.0}; // ( 0 0 -1 1 )
+    cout << v0 * clip_matrix << endl; 
+    cout << Vec<double>{0.0, 0.0, far, 1.0} *clip_matrix <<endl;//( 0 0 2000 2000 )
+    cout << Vec<double>{0.0, 0.0,(far - near)/2, 1.0} *clip_matrix <<endl;//( 0 0 2000 2000 )
+    cout << "------\n";
+    cout << Vec<double>{0.0, 0.0,0.0, 1.0} *clip_matrix <<endl;//( 0 0 2000 2000 )
+    cout << Vec<double>{0.0, 0.0,near * 1.1, 1.0} *clip_matrix <<endl;  //( 0 0 2000 2000 )
+    cout << Vec<double>{0.0, 0.0,near * 2.0, 1.0} *clip_matrix <<endl;  //( 0 0 2000 2000 )
+    cout << Vec<double>{0.0, 0.0,near * 3.0, 1.0} *clip_matrix <<endl;  //( 0 0 2000 2000 )
+
+    Vec<double, 4> v1 {0.0, 0.0, -1.0, 1.0}; 
+    Vec<double, 4> v2 {0.0, 0.0, 7.0, 1.0}; 
+    Vec<double, 4> v3 {0.0, 0.0, 3.0, 1.0}; 
+    //Vec<double, 4> v2 {0., 0., 3.0, 1.0}; 
+    cout << "v1: " << v1 << endl << "v2 : " << v2 << endl;
+    v1 = v1 * clip_matrix;
+    v2 = v2 * clip_matrix;
+    cout << "v1*clip: " << v1 << endl << "v2*clip : " << v2 << endl;
+    cout << "v1 inside(0): " << (v1.z >= -v1.w) << endl;
+    cout << "v2 inside(1): " << (v2.z >= -v2.w) << endl;
+    //double lerp_factor = (v1.z + v1.w) 
+    //       / ( ( v1.z + v1.w - v2.w + v2.z) );
+    double lerp_factor = (-v1.w - v1.z) / ( ( -v1.w - v1.z) - ( -v2.w - v2.z) );
+    //?works? double lerp_factor = (-v1.w - v1.z) / ( ( -v1.w - v1.z) - ( -v2.w - v2.z) );
+    cout << "lerp_factor = " << lerp_factor << endl;
+    cout << "lerp v1 to v2 = " << v1.lerp(v2, lerp_factor) << endl;
+                    
+
+    cout << " end clip matrix test\n";
+    cout << " end clip matrix test\n";
+    cout << " end clip matrix test\n";
 
 
     using std::cout, std::endl;
@@ -658,7 +1405,7 @@ int main()
     SDL_Event e;
     Uint64 time_frame_start;
     Uint64 time_frame_duration = 0;
-    model_selected = &models[0]; // model selected for transformations
+    mesh_selected = &(models[0].meshes[0]); // model selected for transformations
 
     bool posted_info = true;
     while (!exit) {
@@ -688,100 +1435,116 @@ int main()
                 case SDL_KEYDOWN:
                     // rotate selected object
                     if (e.key.keysym.sym == SDLK_q) {
-                        model_selected->rot = model_selected->rot * turn_left;
+                        mesh_selected->rot = mesh_selected->rot * turn_left;
                     }
                     if (e.key.keysym.sym == SDLK_e) {
-                        model_selected->rot = model_selected->rot * turn_right;
+                        mesh_selected->rot = mesh_selected->rot * turn_right;
                     }
                     if (e.key.keysym.sym == SDLK_r) {
-                        model_selected->rot = model_selected->rot * turn_up;
+                        mesh_selected->rot = mesh_selected->rot * turn_up;
                     }
                     if (e.key.keysym.sym == SDLK_f) {
-                        model_selected->rot = model_selected->rot * turn_down;
+                        mesh_selected->rot = mesh_selected->rot * turn_down;
                     }
 
                     if (e.key.keysym.sym == SDLK_1) {
                         cout << "1 pressed" << endl;
-                        model_selected = &models[0];
+                        mesh_selected = &(models[0].meshes[0]);
                     }
                     if (e.key.keysym.sym == SDLK_2) {
                         cout << "2 pressed" << endl;
-                        model_selected = &models[1];
+                        mesh_selected = &(models[1].meshes[0]);
                     }
                     if (e.key.keysym.sym == SDLK_3) {
                         cout << "3 pressed" << endl;
                         if (models.size() > 3) { // exclude index 3, the axis!
-                            model_selected = &models[3];
+                            mesh_selected = &(models[3].meshes[0]);
                         }
                     }
                     if (e.key.keysym.sym == SDLK_4) {
                         cout << "4 pressed" << endl;
                         if (models.size() > 4) { // exclude index 3, the axis!
-                            model_selected = &models[4];
+                            mesh_selected = &(models[4].meshes[0]);
                         }
                     }
                     // transform selected model
                     if (e.key.keysym.sym == SDLK_a) { // left
-                        model_selected->trans.add_to_row(3, Vec{-0.08,0.0,0.0,0.0});
+                        mesh_selected->trans.add_to_row(3, Vec{-0.08,0.0,0.0,0.0});
                     }
                     if (e.key.keysym.sym == SDLK_d) { // right
-                        model_selected->trans.add_to_row(3, Vec{0.08,0.0,0.0,0.0});
+                        mesh_selected->trans.add_to_row(3, Vec{0.08,0.0,0.0,0.0});
                     }
                     if (e.key.keysym.sym == SDLK_w) { // forward
-                        model_selected->trans.add_to_row(3, Vec{0.00,0.0,0.16,0.0});
+                        mesh_selected->trans.add_to_row(3, Vec{0.00,0.0,0.16,0.0});
                     }
                     if (e.key.keysym.sym == SDLK_s) { // backward
-                        model_selected->trans.add_to_row(3, Vec{0.00,0.0,-0.16,0.0});
+                        mesh_selected->trans.add_to_row(3, Vec{0.00,0.0,-0.16,0.0});
                     }
                     if (e.key.keysym.sym == SDLK_z) {  // below
-                        model_selected->trans.add_to_row(3, Vec{0.0,-0.08,0.0,0.0});
+                        mesh_selected->trans.add_to_row(3, Vec{0.0,-0.08,0.0,0.0});
                     }
                     if (e.key.keysym.sym == SDLK_x) { // above
-                        model_selected->trans.add_to_row(3, Vec{0.0,0.08,0.0,0.0});
+                        mesh_selected->trans.add_to_row(3, Vec{0.0,0.08,0.0,0.0});
                     }
                     if (e.key.keysym.sym == SDLK_c) { // shrink
-                        model_selected->scale = model_selected->scale * scale_shrink;
+                        mesh_selected->scale = mesh_selected->scale * scale_shrink;
                     }
                     if (e.key.keysym.sym == SDLK_v) { // enlarge
-                        model_selected->scale = model_selected->scale * scale_enlarge;
+                        mesh_selected->scale = mesh_selected->scale * scale_enlarge;
                     }
                     // transform camera
                     if (e.key.keysym.sym == SDLK_j) { // left
-                        //auto m = translate_x_minus * world_to_camera_rotate;
-                        //world_to_camera_translate.add_to_row(3, m.get_row(3));
+                        //auto m = translate_x_minus * rotate_y(cam_yaw);
+                        //world_to_camera_translate.add_to_row( 3, m.get_row(3));
                         //world_to_camera_translate.set(3, 3, 1.0);
-                        ////world_to_camera_translate.add_to_row( 
-                        ////        3, Vec{-0.08,0.0,0.0,0.0});
-                        auto m = translate_x_minus * rotate_y(cam_yaw);
-                        world_to_camera_translate.add_to_row( 3, m.get_row(3));
-                        world_to_camera_translate.set(3, 3, 1.0);
+                        Vec3 x = { -0.1, 0.0, 0.0}; 
+                        x = x * rotate_y<double, 3, 3>(cam_yaw);
+                        cam_pos += x;
+
                     }
                     if (e.key.keysym.sym == SDLK_l) { // right
-                        auto m = translate_x_plus * rotate_y(cam_yaw);
-                        world_to_camera_translate.add_to_row( 3, m.get_row(3));
-                        world_to_camera_translate.set(3, 3, 1.0);
+                        //auto m = translate_x_plus * rotate_y(cam_yaw);
+                        //world_to_camera_translate.add_to_row( 3, m.get_row(3));
+                        //world_to_camera_translate.set(3, 3, 1.0);
+                        Vec3 x = { 0.1, 0.0, 0.0}; 
+                        x = x * rotate_y<double, 3, 3>(cam_yaw);
+                        cam_pos += x;
                     }
                     if (e.key.keysym.sym == SDLK_i) { // forward
-                        Vec<double> look_dir = {0.0, 0.0, 1.0, 1.0}; 
-                        look_dir = look_dir * rotate_x(cam_pitch) * rotate_y(cam_yaw);
-                        auto t = 0.08 * look_dir;
-                        world_to_camera_translate.add_to_row(3, t);
-                        world_to_camera_translate.set(3, 3, 1.0);
+                        //Vec4 look_dir = {0.0, 0.0, 1.0, 1.0}; 
+                        //look_dir = look_dir * rotate_x(cam_pitch) * rotate_y(cam_yaw);
+                        //Vec4 t = 0.08 * look_dir;
+                        //world_to_camera_translate.add_to_row(3, t);
+                        //world_to_camera_translate.set(3, 3, 1.0);
+                        
+                        Vec3 look_dir = {0.0, 0.0, 1.0}; 
+                        look_dir = look_dir * rotate_x<double, 3, 3>(cam_pitch) * rotate_y<double, 3, 3>(cam_yaw);
+                        look_dir = 0.08 * look_dir;
+                        cam_pos += look_dir;
+                        
                     }
                     if (e.key.keysym.sym == SDLK_k) { // back
-                        Vec<double> look_dir = {0.0, 0.0, 1.0, 1.0}; 
-                        look_dir = look_dir * rotate_x(cam_pitch) * rotate_y(cam_yaw);
-                        auto t = -0.08 * look_dir;
-                        world_to_camera_translate.add_to_row(3, t);
-                        world_to_camera_translate.set(3, 3, 1.0);
+                        //Vec<double> look_dir = {0.0, 0.0, 1.0, 1.0}; 
+                        //look_dir = look_dir * rotate_x(cam_pitch) * rotate_y(cam_yaw);
+                        //auto t = -0.08 * look_dir;
+                        //world_to_camera_translate.add_to_row(3, t);
+                        //world_to_camera_translate.set(3, 3, 1.0);
+                        
+                        Vec3 look_dir = {0.0, 0.0, 1.0}; 
+                        look_dir = look_dir * rotate_x<double, 3, 3>(cam_pitch) * rotate_y<double, 3, 3>(cam_yaw);
+                        look_dir = -0.08 * look_dir;
+                        cam_pos += look_dir;
+
                     }
                     if (e.key.keysym.sym == SDLK_m) { // up
-                        world_to_camera_translate.add_to_row( 
-                                3, Vec{0.0,0.16,0.0,0.0});
+                        //world_to_camera_translate.add_to_row( 
+                        //        3, Vec{0.0,0.16,0.0,0.0});
+                        cam_pos += Vec3{0.0, 0.16, 0.0};
                     }
                     if (e.key.keysym.sym == SDLK_n) { // down
-                        world_to_camera_translate.add_to_row( 
-                                3, Vec{0.0,-0.16,0.0,0.0});
+                        //world_to_camera_translate.add_to_row( 
+                        //        3, Vec{0.0, -0.16, 0.0, 0.0});
+                        cam_pos += Vec3{0.0, -0.16, 0.0};
                     }
                     if (e.key.keysym.sym == SDLK_u) { // rotate left
                         //world_to_camera_rotate = world_to_camera_rotate * turn_left;
@@ -807,7 +1570,7 @@ int main()
                         BACK_FACE_CULLING = !BACK_FACE_CULLING;
                     }
                     // add new ship
-                    if (e.key.keysym.sym == SDLK_7) {
+                    if (e.key.keysym.sym == SDLK_6) {
                         cout << "spawn new ship disabled\n";
                         //Model<double> m;
                         //static double z_pos = 4.0;
@@ -818,17 +1581,25 @@ int main()
                     }
                     
 
+                    // toggle draw line code: SDL vs custom 
+                    if (e.key.keysym.sym == SDLK_6) {
+                        //Custom_Draw_Line = !Custom_Draw_Line;
+                    }
+                    // toggle draw triangle code: SDL vs custom
+                    if (e.key.keysym.sym == SDLK_7) {
+                        //Custom_Draw_Triangle = !Custom_Draw_Triangle;
+                    }
                     // toggle drawing wire frames
                     if (e.key.keysym.sym == SDLK_8) {
-                        for (auto& model : models) {
-                            model.draw_wire_frame = !model.draw_wire_frame;
-                        }
+                        //for (auto& model : models) {
+                        //    //model.draw_wire_frame = !model.draw_wire_frame;
+                        //}
                     }
                     // toggle drawing faces
                     if (e.key.keysym.sym == SDLK_9) {
-                        for (auto& model : models) {
-                            model.draw_face = !model.draw_face;
-                        }
+                        //for (auto& model : models) {
+                        //    //model.draw_face = !model.draw_face;
+                        //}
                     }
                     // print debug info
                     if (e.key.keysym.sym == SDLK_p) {
@@ -852,9 +1623,9 @@ int main()
             middle_mouse_down_delta.data[0] = x - middle_mouse_down_pos_last_frame.data[0];
             middle_mouse_down_delta.data[1] = y - middle_mouse_down_pos_last_frame.data[1];
             // calculate new yaw
-            cam_yaw = cam_yaw + middle_mouse_down_delta.data[0] * PI / 1000.0;
+            cam_yaw = cam_yaw + middle_mouse_down_delta.data[0] * PI / (double)win_res_x;
             // calculate new pitch
-            cam_pitch = cam_pitch + middle_mouse_down_delta.data[1] * PI / 1000.0;
+            cam_pitch = cam_pitch + middle_mouse_down_delta.data[1] * PI / (double)win_res_y;
             // store last frame mouse pos
             middle_mouse_down_pos_last_frame.data[0] = x;
             middle_mouse_down_pos_last_frame.data[1] = y;
@@ -868,567 +1639,57 @@ int main()
         SDL_RenderClear(gsdl.renderer);
         SDL_SetRenderDrawColor(gsdl.renderer, 120, 120, 120, 120);
         //SDL_RenderDrawLine(gsdl.renderer, 400, 400, 800, 800);
+    
 
         //
         // rendering pipeline
         //
-        int model_index = 0;
 
-        //initialize output variable models_world
-        models_world = models;
-        models_out = models;
-
-        //
-        // model to world transform
-        //
-        for (int j = 0; j < models.size(); ++j) { // model index
-            for (int i = 0; i < models[j].tris.size(); ++i) { // tri index
-                models_world[j].tris[i].verts[0] = models[j].tris[i].verts[0] 
-                        * models[j].scale * models[j].rot * models[j].trans;
-                models_world[j].tris[i].verts[1] = models[j].tris[i].verts[1] 
-                        * models[j].scale * models[j].rot * models[j].trans;
-                models_world[j].tris[i].verts[2] = models[j].tris[i].verts[2] 
-                        * models[j].scale * models[j].rot * models[j].trans;
-                
-                //compute lighting
-                models_world[j].tris[i].color = models[j].color; // set initial color
-                Vec a = (models_world[j].tris[i].verts[1] - models_world[j].tris[i].verts[0]).slice(0, 3);
-                Vec b = (models_world[j].tris[i].verts[2] - models_world[j].tris[i].verts[0]).slice(0, 3);
-                Vec c = -1.0 * a.cross(b);
-                c = c.unit();
-                double dp = c.dot( light_dir); 
-                dp = dp * 255;
-                int dp_int = int(dp); 
-                dp_int = std::max( 0, dp_int);
-                models_world[j].tris[i].color = models[j].color * dp_int ; // set initial color
-                
-                //misc data
-                models_world[j].tris[i].draw_wire_frame = models[j].draw_wire_frame;
-                models_world[j].tris[i].draw_face = models[j].draw_face;
-            }
-        }
-
-        // get average position of model 0 for debug purposes
-        model_0_pos = Vec<double>(4);
-        for (int i = 0; i < models_world[0].tris.size(); ++i) {
-            for (int j = 0; j < 3; ++j) {
-                model_0_pos = model_0_pos + models_world[0].tris[i].verts[j];
-            }
-        }
-        model_0_pos = model_0_pos / (models_world[0].tris.size() * 3); 
-        // get average position of model 1 for debug purposes
-        model_1_pos = Vec<double>(4);
-        for (int i = 0; i < models_world[1].tris.size(); ++i) {
-            for (int j = 0; j < 3; ++j) {
-                model_1_pos = model_1_pos + models_world[1].tris[i].verts[j];
-            }
-        }
-        model_1_pos = model_1_pos / (models_world[1].tris.size() * 3); 
-
-        //
-        // triangles: backface culling, in world space
-        //
+        // cam_pos and look_at_dir
         
-        models_culled = models_world;
-        for (auto& m : models_culled ) {
-            m.tris.clear();
-        }
-        for (int j = 0; j < models_world.size(); ++j) {
-            for (int i = 0; i < models_world[j].tris.size(); ++i) {
-                if (models_world[j].tris[i].draw_back_face) {
-                    models_culled[j].tris.push_back( models_world[j].tris[i]);
-                    continue;
-                }
-                // get normal of triangle
-                Vec<double> line0 = (models_world[j].tris[i].verts[1] 
-                        - models_world[j].tris[i].verts[0]).slice(0, 3);
-                Vec<double> line1 = (models_world[j].tris[i].verts[2] 
-                        - models_world[j].tris[i].verts[0]).slice(0, 3);
-                Vec<double> norm = (line0.cross(line1)).unit();
-                Vec<double> point = models_world[j].tris[i].verts[0].slice(0, 3); 
-                Vec<double> point_cam = (world_to_camera_translate.get_row(3)).slice(0, 3);
-                point = point - point_cam;
-                double dp = norm.dot(point); 
-                if (!BACK_FACE_CULLING || dp < 0.0) {
-                    models_culled[j].tris.push_back( models_world[j].tris[i]);
-                }
-            }
-        }
+        init_vertices();
+        int num_verts = pos_in.size(); // TODO CHANGE
+        int num_tris = indices.size()/12; // TODO CHANGE
+        assert(indices.size() % 12 == 0);
 
-        //
-        //world to camera (triangles)
-        //
+        Vec3 up = {0.0, 1.0, 0.0};
+        //Vec<double, 3> cam_pos = slice<double, 3, 4>(
+        //        world_to_camera_translate.get_row(3));
+        Vec3 look_dir = {0.0, 0.0, 1.0}; 
+        look_dir = look_dir * rotate_x<double, 3, 3>(cam_pitch) * rotate_y<double, 3, 3>(cam_yaw);
+        Vec3 target = cam_pos + look_dir;
+        //look_at = look_at_matrix(cam_pos, target, up);
+        world_to_camera_matrix = look_at_matrix(cam_pos, target, up);
 
-        // create Point_At matrix
-        // TODO ideally, these should all be 3 dimensional vectors (use 3x3 rot matrix)
-        models_out = models_culled;
-        Vec<double> up = {0.0, 1.0, 0.0};
-        Vec<double> cam_pos = (world_to_camera_translate.get_row(3)).slice(0, 3);
-        Vec<double> look_dir = {0.0, 0.0, 1.0, 1.0}; 
-        look_dir = look_dir * rotate_x(cam_pitch) * rotate_y(cam_yaw);
-        Vec<double> target = cam_pos + look_dir.slice(0, 3);
-        look_at = look_at_matrix(cam_pos, target, up);
-       
-        // old view code
-        //models_out = models_culled;
-        //auto A = world_to_camera_rotate.get_row(0);
-        //A = A.slice(0, 3);
-        //auto B = world_to_camera_rotate.get_row(1);
-        //B = B.slice(0, 3);
-        //auto C = world_to_camera_rotate.get_row(2);
-        //C = C.slice(0, 3);
-        //auto T = world_to_camera_translate.get_row(3);
-        //T = T.slice(0, 3);
-        //look_at = world_to_camera_rotate.transpose();
-        ////look_at = world_to_camera_rotate;
-        //look_at.set(3, 0, - A.dot(T));
-        //look_at.set(3, 1, - B.dot(T));
-        //look_at.set(3, 2, - C.dot(T));
-        //look_at.set(3, 3, 1.0);
-         
-        static bool asdf1 = false;
-        if (asdf1 == false) {
-            asdf1 = true;
-            cout << "printing look_at matrix\n" << look_at << '\n';
-            cout << "printing world_to_camera_rotate\n" << world_to_camera_rotate << '\n';
-        }
+
+        model_to_world(0, num_verts);
+        model_to_world_normals(0, norms_in.size());
+        model_to_world_part2(0, num_tris);  // does triangle level operations, obsolete?
+        world_to_clip_matrix = world_to_camera_matrix * clip_matrix;
+        world_to_clip(0, num_verts);
+
+        clip(0, num_tris);
+        // verts and tri counts have changed
+        num_verts = pos_clip.size();
+        num_tris = indices_clip.size() / NUM_ATTRB_PER_VERT;
         
-        for (auto& model : models_out) {
-            for (int i = 0; i < model.tris.size(); ++i) {
-                model.tris[i].verts[0] = model.tris[i].verts[0] * look_at;
-                model.tris[i].verts[1] = model.tris[i].verts[1] * look_at;
-                model.tris[i].verts[2] = model.tris[i].verts[2] * look_at;
-            }
-        }
-        models_view = models_out;
-        //
-        //world to camera (lines)
-        //
-        model_index = 0;
-        for (auto& output : lines_outputs) {
-            for (int i = 0; i < output.size(); ++i) {
-                output[i] = lines_world[model_index][i] * look_at;
-            }
-            model_index++;
-        }
-        if (print_info) {
-            cout << "printing world coordinates of lines\n";
-            for (auto& output : lines_world) {
-                cout << output[0] << ", " << output[1] << endl;
-            }
-            cout << "printing view/camera coordinates of lines\n";
-            for (auto& output : lines_outputs) {
-                cout << output[0] << ", " << output[1] << endl;
-            }
-        }
-       
-        //
-        //camera to clip (triangles)
-        //
-        models_out = models_view;
-        model_index = 0;
-        for (auto& model : models_out) {
-            for (auto& tri : model.tris) {
-                for (auto& vert : tri.verts) {
-                    vert = vert * clip_matrix * ortho_matrix;
-                }
-            }
-        }
-        models_clipped = models_out;
-        //
-        //camera to clip (lines)
-        //
-        model_index = 0;
-        for (auto& output : lines_outputs) {
-            for (int i = 0; i < output.size(); ++i) {
-                output[i] = output[i] * clip_matrix * ortho_matrix;
-            }
-            model_index++;
-        }
-        if (print_info) {
-            cout << "printing clip coordinates of lines\n";
-            for (auto& output : lines_outputs) {
-                cout << output[0] << ", " << output[1] << endl;
-            }
-        }
-
         // 
-        // clip out of bounds vertices (triangles)
-        //
-        //model_index = 0;
-        ////model_outputs_clipped = model_outputs;
-        //// input is: models_clipped, output is:  
-        auto models_clipped_out = models_clipped;
-        int red_before = models_clipped[0].color.r;
-        int red_after = models_clipped_out[0].color.r;
+        pos_ndc.resize( pos_clip.size() );
+        pos_screen.resize( pos_clip.size() ); //crashes
+        homogenous_divide(0, num_verts);
 
-        static bool asdf1234 = false;
-        if (!asdf1234) {
-            asdf1234 = true;
-            cout << "red before = " << red_before << '\n';
-            cout << "red after = " << red_after << '\n';
-        }
-
-
-        for (auto& m : models_clipped_out) {
-            m.tris.clear();
-        }
-        //clip near z plane
-        int i_model = 0;
-        vector<Vec<double>> clipped_points;
-        clipped_points.reserve(6);
-        for (const auto& model : models_clipped) {
-            //models_clipped_out[i_model].tris.reserve(model.tris.size() * 3 * 2);
-            models_clipped_out[i_model].tris.reserve(model.tris.size() * 3 * 2);
-            //assert(models_clipped_out[i_model].tris.size())
-            assert(model.tris[0].verts[0].length > 0 && model.tris[0].verts[0].length <= 4); 
-            //if ( (model.tris.size() > 0 && model.tris.size() < 1000000) == false) {
-            //    cout << "crashing! " << i_model << ", " << model.tris.size() << '\n';
-            //}
-            //assert(model.tris.size() > 0 && model.tris.size() < 1000000); //TODO crash here occasionally
-            for (const auto& tri : model.tris) {
-                
-
-                //// check for simplest case where all vec's are inside or all outside clipping plane
-                // TODO perspective and ortho mactrices have inaccuries.
-                // left, right, bottom and top clipping happens inside viewing
-                // near clipping works fine
-                //// bottom clip course
-                //if ( tri.verts[0].data[1] < -1.0 * tri.verts[0].data[3]
-                //        && tri.verts[1].data[1] < -1.0 * tri.verts[1].data[3]
-                //        && tri.verts[2].data[1] < -1.0 * tri.verts[2].data[3]) {
-                //    
-                //    continue;
-                //}
-                //// left clip course 
-                //if ( tri.verts[0].data[0] < -1.0 * tri.verts[0].data[3]
-                //        && tri.verts[1].data[0] < -1.0 * tri.verts[1].data[3]
-                //        && tri.verts[2].data[0] < -1.0 * tri.verts[2].data[3]) {
-                //    
-                //    continue;
-                //}
-                //// right clip course 
-                //if ( tri.verts[0].data[0] > 1.0 * tri.verts[0].data[3]
-                //        && tri.verts[1].data[0] > 1.0 * tri.verts[1].data[3]
-                //        && tri.verts[2].data[0] > 1.0 * tri.verts[2].data[3]) {
-                //    
-                //    continue;
-                //}
-
-
-
-
-
-                // check for simplest case where all vec's are inside or all outside clipping plane
-                // check if all outside
-                if ( tri.verts[0].data[2] > tri.verts[0].data[3]
-                        && tri.verts[1].data[2] > tri.verts[1].data[3]
-                        && tri.verts[2].data[2] > tri.verts[2].data[3]) {
-                    models_clipped_out[i_model].tris.push_back( tri );
-                    continue;  
-
-                } else if ( tri.verts[0].data[2] < tri.verts[0].data[3]
-                        && tri.verts[1].data[2] < tri.verts[1].data[3]
-                        && tri.verts[2].data[2] < tri.verts[2].data[3]) {
-                    
-                    continue;
-                }
-                Vec<double> vert_prev = tri.verts[2]; // last vertex is [3], current is [0]
-                bool prev_inside = vert_prev.data[2] >  1.0 * vert_prev.data[3]; // check if inside near plane 
-                //bool prev_inside = vert_prev.data[2] <  vert_prev.data[3]; // check if inside near plane 
-                // [2] is Z value!!!!  [3] is W value!!!!
-                int verts_added = 0;
-                clipped_points.clear(); 
-                for (auto& vert_cur : tri.verts) {
-                    bool cur_inside = vert_cur.data[2] >  1.0 * vert_cur.data[3];
-                    //bool cur_inside = vert_cur.data[2] < vert_cur.data[3];
-
-                    if ( (!prev_inside) != (!cur_inside) ) {
-                        double lerp_factor = (vert_prev.data[3] - vert_prev.data[2]) 
-                                / ( ( vert_prev.data[3] - vert_prev.data[2]) 
-                                - ( vert_cur.data[3] - vert_cur.data[2]) );
-                        clipped_points.push_back( vert_prev.lerp(vert_cur, lerp_factor));
-                        verts_added++; // should just use size of vector?
-                    }
-
-                    if (cur_inside) {
-                        clipped_points.push_back(vert_cur);
-                        verts_added++;
-                    }
-
-                    prev_inside = cur_inside;
-                    vert_prev = vert_cur;
-                }
-                // 0, 3, 4 vertices should be generated, so, 0, 1, 2 triangles should be generated
-                //cout << "verts added = " << verts_added << '\n';
-                assert(verts_added == 0 || verts_added == 3 || verts_added == 4);
-                if (verts_added == 0) {
-                    //do nothing
-                } else if ( verts_added == 3) {
-                    models_clipped_out[i_model].tris.push_back( 
-                            Tri<double>(clipped_points[0], 
-                            clipped_points[1], 
-                            clipped_points[2], 
-                            tri.color, 
-                            tri.draw_wire_frame,
-                            tri.draw_face));
-                            //models_clipped_out[i_model].color));
-                } else if ( verts_added == 4) {
-                    //cout << "clipping happened!\n";
-                    models_clipped_out[i_model].tris.push_back( 
-                            Tri<double>(clipped_points[0], 
-                            clipped_points[1], 
-                            clipped_points[2], 
-                            tri.color,
-                            tri.draw_wire_frame,
-                            tri.draw_face));
-                    models_clipped_out[i_model].tris.push_back( 
-                            Tri<double>(clipped_points[0], 
-                            clipped_points[2], 
-                            clipped_points[3], 
-                            tri.color,
-                            tri.draw_wire_frame,
-                            tri.draw_face));
-                }
-            }
-            models_clipped_out[i_model].color = model.color;
-
-            i_model++;
-        }
-
-
-        // 
-        // clip out of bounds vertices (lines)
-        //
-        //lines_outputs_clipped = lines_outputs;
-        model_index = 0;
-        // clear previously clipped vertices
-        for (auto& line_clipped : lines_outputs_clipped)
-        {
-            line_clipped.clear();
-        }
-        //array<vector<Vec<double>>, NUM_LINES> lines_outputs; 
-        for (const vector<Vec<double>>& output : lines_outputs) {
-          
-            clip_line3d(output, clip_planes, Vec{0.0, 0.0, 0.0}, 
-                    lines_outputs_clipped[model_index]);
-            int vertices_returned = lines_outputs_clipped[model_index].size(); 
-            if (vertices_returned > 2) {
-                assert(" line clip return's > 2 vertices\n");
-            } else if (vertices_returned == 2) {
-                model_index++;
-            } else if (vertices_returned == 1) {
-                assert(" line clip return's 1 vertices\n");
-            } else if (vertices_returned == 0) {
-                // fine, but don't increment model_index;
-            } else {
-                assert(" line clip returns wrong num of vertices\n");
+        map_to_window(0, num_verts);
+        for (int i = 0; i < win_res_y; ++i) {
+            for (int j = 0; j < win_res_x; ++j) {
+                depth_buffer[i][j] = 2.0f;
             }
         }
-        lines_outputs_clipped_count = model_index;
-
-        //
-        // homogenous divide (triangles)
-        //
-        models_out = models_clipped_out;
-        if (!posted_info) { cout << "homogenous divide vertices" << endl; }
-        model_index = 0;
-        for (auto& model : models_out) {
-            for (auto& tri : model.tris) {
-                for (auto& vert : tri.verts) {
-                    double w = vert.data[3];
-                    vert = (1.0/w) * vert; 
-                }
-            }
-        }
-        models_ndc = models_out;
-        //
-        // homogenous divide (lines)
-        //
-        if (!posted_info) { cout << "homogenous divide vertices" << endl; }
-        model_index = 0;
-        for (auto& output : lines_outputs_clipped) {
-            for (int i = 0; i < output.size(); ++i) {
-                double w = output[i].data[3];
-                if (w != 0.0) {
-                    output[i] = (1.0/w) * output[i]; 
-                } else {
-                    output[i].data[0] = 0.0; 
-                    output[i].data[1] = 0.0; 
-                    output[i].data[2] = 0.0; 
-                }
-            }
-        }
-        //
-        // project to screen (triangles)
-        //
-        if (!posted_info) { cout << "screen vertices" << endl; }
-        models_out = models_ndc;
-        for (auto& model : models_out) {
-            for (auto& tri : model.tris) {
-                for (auto& vert : tri.verts) {
-                    vert.data[0] = 1.0 * vert.data[0] * win_res_x 
-                            /(vert.data[2] * 2.0 ) + 1000.0/2.0;
-                    vert.data[1] = -1.0 * vert.data[1] * win_res_y 
-                            /(vert.data[2] * 2.0 ) + 1000.0/2.0;
-                }
-            }
-        }
-        models_screen = models_out;
-        //
-        // project to screen (lines)
-        //
-        if (!posted_info) { cout << "screen vertices" << endl; }
-        for (auto& output : lines_outputs_clipped) {
-            for (int i = 0; i < output.size(); ++i) {
-                output[i].data[0] = 1.0 * output[i].data[0] * win_res_x
-                    / (output[i].data[2] * 2.0) + 1000.0/2.0;
-                output[i].data[1] = -1.0 * output[i].data[1] * win_res_y
-                    / (output[i].data[2] * 2.0) + 1000.0/2.0;
-            }
-        }
-
-        // draw debug stuff before rastering
-
-        //
-        // raster lines
-        //
-        // const int origin_index = 2;
-        // bool dont_render_origin = false;
-        if (RENDER_LINES) {
-        int i = 0;
-        SDL_SetRenderDrawColor(gsdl.renderer, 0, 50, 0, 20);
-        for (auto& output : lines_outputs_clipped) {
-            if(i < lines_outputs_clipped_count) {
-                i++;
-            } else {
-                break;
-            }
-            for (int i_line = 0; i_line < output.size(); i_line += 2) {
-                SDL_RenderDrawLine(gsdl.renderer, 
-                        output[i_line].data[0], output[i_line].data[1],
-                        output[i_line+1].data[0], output[i_line+1].data[1]);
-            }
-            //dont_draw_line:;
-            model_index++;
-        } 
-        }
-
-        //
-        // raster triangles ( as wireframe or filled in)
-        //
-        // but first sort them (fill up Tri's buffer)
-        //vector<Tri<double>> tris;
-        //for (int j = 0; j < model_outputs_clipped.size(); ++j) {
-        //    Color c;
-        //    bool draw_wire_frame = true;
-        //    
-        //    for (int i = 0; i < model_outputs_clipped[j].size(); i += 3) {
-        //        if (j != 2) {
-        //            c = {50, 50, 50, 100};
-        //        } else {
-        //            draw_wire_frame = false;
-        //            if (i == 0) {
-        //                c = {100, 0, 0, 100};
-        //            } else if (i == 1) {
-        //                c = {0, 100, 0, 100};
-        //            } else {
-        //                c = {0, 0, 100, 100};
-        //            }
-        //        }
-        //        Tri<double> tri{model_outputs_clipped[j], i, c, draw_wire_frame};
-        //        tris.push_back(tri);
-        //    }
-        //}
-        //vector1.insert( vector1.end(), vector2.begin(), vector2.end() );
-        //vector<Tri<double>> tris = models_screen[1].tris;
-        //tris.insert(tris.end(), models_screen[1].tris.begin(), models_screen[1].tris.end());
-        //tris.insert(tris.end(), models_screen[2].tris.begin(), models_screen[2].tris.end());
-       
-
-
-        vector<Tri<double>> tris = models_screen[0].tris;
-        //tris.insert(tris.end(), models_screen[1].tris.begin(), models_screen[1].tris.end());
-        //tris.insert(tris.end(), models_screen[2].tris.begin(), models_screen[2].tris.end());
-
-
-        for (int i = 1; i < models_screen.size(); ++i) {
-            tris.insert( tris.end(), models_screen[i].tris.begin(), models_screen[i].tris.end());
-        }
-
-        sort(tris.begin(), tris.end(), [](Tri<double>& tri0, Tri<double>& tri1) {
-            double z0 = (tri0.verts[0].data[2] + tri0.verts[1].data[2] 
-                + tri0.verts[2].data[2]) / 3.0;
-            double z1 = (tri1.verts[0].data[2] + tri1.verts[1].data[2] 
-                + tri1.verts[2].data[2]) / 3.0;
-            return z0 > z1;
-        });
-        for (auto& tri : tris) {
-            if (tri.draw_face) {
-                draw_triangle(tri); 
-            }
-            // ignore for now
-            //if (!tri.draw_wire_frame) {
-            //    continue;
-            //}
-            // now draw wireframe
-            // i_tri is index to begining of triangle
-            if (tri.draw_wire_frame) { 
-                for (int i = 0; i < 3; ++i) {
-                    // draws wireframe
-                    // i at vertex of triangle
-                    int j = (i + 1 < 3) ? i + 1 : 0;
-                    SDL_SetRenderDrawColor(gsdl.renderer, 250, 250, 250, 20);
-                     
-                    SDL_RenderDrawLine(gsdl.renderer, 
-                            tri.verts[i].data[0], tri.verts[i].data[1],
-                            tri.verts[j].data[0], tri.verts[j].data[1]);
-                }
-            }
-        }
-
+        raster_triangles(0, num_tris);
         
-        // as TTF_RenderText_Solid could only be used on
-        // SDL_Surface then you have to create the surface first
-        std::ostringstream sstr{};
-        sstr << "ship.pos : " << model_0_pos;
-        draw_text(sstr.str(), 0, 0);
-        sstr.str("");
-        sstr.clear();
-        sstr << "teapot.pos : " << model_1_pos;
-        draw_text(sstr.str(), 0, 20);
-        sstr.str("");
-        sstr.clear();
-        sstr << "cam : " << look_at.get_row(0) ;
-        draw_text(sstr.str(), 0, 40);
-        sstr.str("");
-        sstr.clear();
-        sstr << "cam : " << look_at.get_row(1) ;
-        draw_text(sstr.str(), 0, 60);
-        sstr.str("");
-        sstr.clear();
-        sstr << "cam : " << look_at.get_row(2) ;
-        draw_text(sstr.str(), 0, 80);
-        sstr.str("");
-        sstr.clear();
-        sstr << "cam : " << look_at.get_row(3) ;
-        draw_text(sstr.str(), 0, 100);
-        sstr.str("");
-        sstr.clear();
-        sstr << "cam world: " << world_to_camera_translate.get_row(3) ;
-        draw_text(sstr.str(), 0, 120);
-        //sstr.str("");
-        //sstr.clear();
-        //sstr << "BF cull: " << BACK_FACE_CULLING;
-        //draw_text(sstr.str(), 0, 140);
-        sstr.str("");
-        sstr.clear();
-        sstr << "look_dir: " << look_dir;
-        draw_text(sstr.str(), 0, 140);
-        sstr.str("");
-        sstr.clear();
-        sstr << "box0 tri[0].color" << models_world[0].tris[0].color;
-        draw_text(sstr.str(), 0, 160);
+
+        //
+        // end rendering pipeline
+        //
 
         if (posted_info == false) {
             posted_info = true;
@@ -1442,6 +1703,7 @@ int main()
         }
     }
     SDL_DestroyWindow(gsdl.window);
+    IMG_Quit();
     SDL_Quit();
 }
 
