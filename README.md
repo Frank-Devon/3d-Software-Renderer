@@ -11,6 +11,7 @@ The program displays textured objects with smooth lighting in 3D perspective.  T
 - toggle wireframes 8, toggle faces 9, toggle back face culling 0
 
 **More details**
+- Indexed rendering (each vertex transformed only once through the pipeline)
 - Texturing and depth buffer used.
 - Per-pixel diffuse lighting.
 - Clipping is done in clip space.
@@ -19,9 +20,9 @@ The program displays textured objects with smooth lighting in 3D perspective.  T
 **What's next**
 - Multi-threading
 - Specular reflections
-- General refactoring
 - Fix minor glitch: perspective correct interpolation of vertex attributes.
 - Geometry and texture editing
+- General refactoring
 
 **Build**
 - builds on linux with g++ *.cpp -g -lSDL2 -lSDL2_image -lSDL2_ttf
